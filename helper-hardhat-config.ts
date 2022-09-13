@@ -22,7 +22,7 @@ export const networkConfig: { [chainId: string]: NetworkConfigItem } = {
     waitForConfirmations: 6,
   },
   80001: {
-    name: 'mumbai',
+    name: 'polygonMumbai',
     type: 'test-net',
     waitForConfirmations: 6,
   },

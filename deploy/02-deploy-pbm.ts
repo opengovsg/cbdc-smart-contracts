@@ -20,7 +20,7 @@ const deployFunction: DeployFunction = async ({ getNamedAccounts, deployments })
 
   const pbmContract = await deploy('PBMToken', {
     from: PBMDeployer,
-    args: [dsgdContractAddress, 'Sample Token', 'STN'],
+    args: [dsgdContractAddress, 'PBM Sample Token', 'XPBM'],
     // Defaults to 1 confirmation, assuming that network deployed to is local testnet
     waitConfirmations: networkConfig[chainId].waitForConfirmations || 1,
     log: true,
@@ -30,7 +30,7 @@ const deployFunction: DeployFunction = async ({ getNamedAccounts, deployments })
   if (networkConfig[chainId].type !== 'local-net') {
     await verifyContract({
       address: pbmContract.address,
-      args: [dsgdContractAddress, 'Sample Token', 'STN'],
+      args: [dsgdContractAddress, 'PBM Sample Token', 'XPBM'],
     })
   }
 }
