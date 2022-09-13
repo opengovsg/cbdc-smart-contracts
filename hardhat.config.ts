@@ -8,11 +8,9 @@ import '@primitivefi/hardhat-dodoc'
 import 'hardhat-deploy'
 import { getPrivateKeyForRole } from './helpers/network'
 
-
 // RPC Envs
 const GOERLI_RPC_URL = process.env.GOERLI_RPC_URL || ''
 const MUMBAI_RPC_URL = process.env.MUMBAI_RPC_URL || ''
-
 
 // API Envs
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || ''
@@ -42,8 +40,8 @@ const config: HardhatUserConfig = {
       mumbai: {
         url: MUMBAI_RPC_URL,
         accounts: [getPrivateKeyForRole('DSGD_DEPLOYER'), getPrivateKeyForRole('PBM_DEPLOYER')],
-        chainId: 80001
-      }
+        chainId: 80001,
+      },
     }),
   },
   namedAccounts: {
@@ -55,9 +53,8 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       goerli: ETHERSCAN_API_KEY,
-      polygonMumbai :POLYGON_API_KEY,
+      polygonMumbai: POLYGON_API_KEY,
       polygon: POLYGON_API_KEY,
-
     },
   },
   gasReporter: {
