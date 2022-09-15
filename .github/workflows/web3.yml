@@ -43,5 +43,6 @@ jobs:
         uses: crytic/slither-action@main
         id: slither
         with:
+          fail-on: medium
           node-version: '14.x'
           ignore-compile: true
