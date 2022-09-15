@@ -38,3 +38,11 @@ jobs:
 
       - name: Run test
         run: npm run test
+
+      - name: Run slither analysis
+        uses: crytic/slither-action@v0.1.1
+        id: slither
+        with:
+          fail-on: none
+          node-version: '14.x'
+          ignore-compile: true
