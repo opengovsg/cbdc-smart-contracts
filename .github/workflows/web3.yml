@@ -40,11 +40,16 @@ jobs:
         run: npm run test
 
       - name: Run slither analysis
-        uses: crytic/slither-action@main
-        # Slither errors out if failure detected, ignores fail-on
+        uses: crytic/slither-action@v0.1.1
         continue-on-error: true
         id: slither
         with:
-          fail-on: medium
           node-version: '14.x'
           ignore-compile: true
+          sarif: results.sarif
+
+      - name: Upload slither SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: ${{ steps.slither.outputs.sarif }}
+
