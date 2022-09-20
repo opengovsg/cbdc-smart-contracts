@@ -41,6 +41,8 @@ jobs:
 
       - name: Run slither analysis
         uses: crytic/slither-action@main
+        # Slither errors out if failure detected, ignores fail-on
+        continue-on-error: true
         id: slither
         with:
           fail-on: medium
