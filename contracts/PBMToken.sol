@@ -3,6 +3,8 @@ pragma solidity ^0.8.8;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import "./DSGDToken.sol";
 
 /// @title PBM Contract for Campaign Organisers
@@ -10,17 +12,16 @@ import "./DSGDToken.sol";
 /// @dev Most functions utilises OpenZepellin, with constrained modifiers in place to tighten up access control
 
 contract PBMToken is ERC20Pausable, AccessControl {
+    using SafeERC20 for DSGDToken;
+
     DSGDToken private underlyingToken;
     address public immutable owner;
     uint8 private constant DECIMALS = 18;
 
-    // Defines the 1-1 pegging between PBM and DSGD, accounting for decimal
-    uint8 private constant PEGGING_TO_BASE_TOKEN = 1;
-
     /// @notice Returns the static pegging of PBM token to underlying token, with decimal difference accounted for
-    /// @dev  Calculated as ratio underlying * underlying.decimals() / pbm * pbm.decimals()
+    /// @dev  Calculated pegged ratio as underlying.decimals() / pbm * pbm.decimals() to signifiy 1-1 pegging
     /// @return static pegging with decimal difference accounted for
-    uint8 public immutable ratio;
+    uint8 public immutable peggedRatio;
 
     // RBAC related constants
     bytes32 public constant DISSOLVER_ROLE = keccak256("DISSOLVER_ROLE");
@@ -33,7 +34,7 @@ contract PBMToken is ERC20Pausable, AccessControl {
     }
 
     modifier onlyDissovlerRecipients(address recipient) {
-        require(hasRole(DISSOLVER_ROLE, recipient) == true, "not a dissolver");
+        require(hasRole(DISSOLVER_ROLE, recipient), "not a dissolver");
         _;
     }
 
@@ -45,7 +46,7 @@ contract PBMToken is ERC20Pausable, AccessControl {
         owner = _msgSender();
         // Initialises the base DSGD token
         underlyingToken = DSGDToken(baseDsgdAddress);
-        ratio = PEGGING_TO_BASE_TOKEN * (underlyingToken.decimals() / DECIMALS);
+        peggedRatio = underlyingToken.decimals() / DECIMALS;
 
         // Sets up required roles
         _grantRole(DISSOLVER_ADMIN_ROLE, owner);
@@ -55,17 +56,17 @@ contract PBMToken is ERC20Pausable, AccessControl {
     /// @notice Similar to a deposit function of a wrapped token. Caller has to approve contract's address on underlying token. Limited to owner
     /// @dev Current logic for decimal conversion is not finalised
     /// @param recipient address of recipient to mint to
-    /// @param amount pbm token s to be minted, expressed in this contracts decimal
+    /// @param amount pbm tokens to be minted, expressed in this contracts decimal
     /// @return returns success state of mint
     function addSupply(address recipient, uint256 amount)
         external
         onlyOwner
         returns (bool)
     {
-        underlyingToken.transferFrom(
+        underlyingToken.safeTransferFrom(
             _msgSender(),
             address(this),
-            amount * ratio
+            amount * peggedRatio
         );
         _mint(recipient, amount);
         return true;
@@ -79,7 +80,7 @@ contract PBMToken is ERC20Pausable, AccessControl {
         external
         onlyDissovlerRecipients(recipient)
     {
-        underlyingToken.transfer(recipient, amount * ratio);
+        underlyingToken.safeTransfer(recipient, amount * peggedRatio);
         _burn(_msgSender(), amount);
     }
 
