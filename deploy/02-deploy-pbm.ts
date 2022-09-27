@@ -4,6 +4,8 @@ import { network } from 'hardhat'
 import { getDeployedUnderlyingToken } from '../helpers/network'
 import { verifyContract } from '../helpers/verify'
 
+const tentativeExpiryDate = 1672531200
+
 const deployFunction: DeployFunction = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments
 
@@ -20,7 +22,7 @@ const deployFunction: DeployFunction = async ({ getNamedAccounts, deployments })
 
   const pbmContract = await deploy('PBMToken', {
     from: PBMDeployer,
-    args: [dsgdContractAddress, 'PBM Sample Token', 'XPBM'],
+    args: [dsgdContractAddress, 'PBM Sample Token', 'XPBM', tentativeExpiryDate],
     // Defaults to 1 confirmation, assuming that network deployed to is local testnet
     waitConfirmations: networkConfig[chainId].waitForConfirmations || 1,
     log: true,

@@ -1,5 +1,7 @@
 import { PBMToken } from '../typechain-types'
 import { ethers } from 'hardhat'
+import { time } from '@nomicfoundation/hardhat-network-helpers'
+
 import { expect } from 'chai'
 import { dsgdAmount, pbmAmount } from './helpers'
 import { initBothContracts, seedWalletStates } from './fixtures/pbm'
@@ -182,7 +184,7 @@ describe('PBM', () => {
       // Assertions
 
       expect(await pbmToken.paused()).to.be.equal(true)
-      // Assert that no transfers can happen while paused
+      // Assert that no redemptions can happen while paused
       await expect(
         pbmToken.connect(resident).dissolveIntoDsgd(merchant.address, pbmAmount(1))
       ).to.be.revertedWith('ERC20Pausable: token transfer while paused')
@@ -190,6 +192,11 @@ describe('PBM', () => {
       // Assert that no minting can happen while paused
       await expect(
         pbmToken.connect(pbmDeployer).addSupply(resident.address, pbmAmount(10))
+      ).to.be.revertedWith('ERC20Pausable: token transfer while paused')
+
+      // Assert that no transfers can happen while paused
+      await expect(
+        pbmToken.connect(resident).transfer(pbmDeployer.address, pbmAmount(10))
       ).to.be.revertedWith('ERC20Pausable: token transfer while paused')
     })
 
@@ -262,6 +269,71 @@ describe('PBM', () => {
 
       await expect(nonHolderDissolve).to.be.revertedWith('ERC20: burn amount exceeds balance')
       expect(await pbmToken.totalSupply()).to.be.equal(pbmAmount(initialResidentBalance))
+    })
+  })
+
+  describe('contract expiry', () => {
+    // TODO: Park this constants somewhere with fixtures
+    // TODO: Use moment for generating more human-readable timestamps
+    const EPOCH_TIME_IN_FUTURE = 1704067200
+
+    it('should be able to extend an expiry for active contract', async () => {
+      const { pbmToken, pbmDeployer } = await seedWalletStates()
+      // Attempts to extend contract expiry to 2024
+      await pbmToken.connect(pbmDeployer).extendExpiry(EPOCH_TIME_IN_FUTURE)
+      expect(await pbmToken.contractExpiry()).to.be.equal(EPOCH_TIME_IN_FUTURE)
+    })
+
+    it('should not be able to shorten expiry for active contract', async () => {
+      const { pbmToken, pbmDeployer } = await seedWalletStates()
+      const currentExpiryDate = await pbmToken.contractExpiry()
+
+      // Attempt to shorten the expiry date by 1 second
+      const reduceExpiryTransaction = pbmToken
+        .connect(pbmDeployer)
+        .extendExpiry(currentExpiryDate.sub(1))
+
+      await expect(reduceExpiryTransaction).to.be.revertedWith('cannot shorten expiry date')
+      expect(await pbmToken.contractExpiry()).to.be.equal(currentExpiryDate)
+    })
+
+    it('should not be able to extend an expiry for an already expired contract', async () => {
+      const { pbmToken, pbmDeployer } = await seedWalletStates()
+      const originalExpiryDate = await pbmToken.contractExpiry()
+
+      // Manipulate HRE to forward world time to expiry date
+      await time.increaseTo(originalExpiryDate)
+
+      // Attempts to extend contract expiry to 2024
+      const updateExpiryOnExpiredContractTransaction = pbmToken
+        .connect(pbmDeployer)
+        .extendExpiry(EPOCH_TIME_IN_FUTURE)
+
+      await expect(updateExpiryOnExpiredContractTransaction).to.be.revertedWith('contract expired')
+      expect(await pbmToken.contractExpiry()).to.be.equal(originalExpiryDate)
+    })
+
+    it('should freeze transaction activities on expiry', async () => {
+      const { pbmToken, pbmDeployer, merchant, resident } = await seedWalletStates()
+      const currentExpiryDate = await pbmToken.contractExpiry()
+
+      // Manipulate HRE to forward world time to expiry date
+      await time.increaseTo(currentExpiryDate)
+
+      // Assert that no redemptions can happen while expired
+      await expect(
+        pbmToken.connect(resident).dissolveIntoDsgd(merchant.address, pbmAmount(1))
+      ).to.be.revertedWith('contract expired')
+
+      // Assert that no minting can happen while expired
+      await expect(
+        pbmToken.connect(pbmDeployer).addSupply(resident.address, pbmAmount(10))
+      ).to.be.revertedWith('contract expired')
+
+      // Assert that no transfers can happen while expired
+      await expect(
+        pbmToken.connect(resident).transfer(pbmDeployer.address, pbmAmount(10))
+      ).to.be.revertedWith('contract expired')
     })
   })
 })
