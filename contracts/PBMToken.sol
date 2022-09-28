@@ -32,7 +32,7 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable {
         keccak256("DISSOLVER_ADMIN_ROLE");
 
     modifier onlyOwner() {
-        require(_msgSender() == owner, "Not owner");
+        require(_msgSender() == owner, "not owner");
         _;
     }
 
@@ -110,12 +110,12 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable {
         _unpause();
     }
 
-    function revokeDissolverRole(address account) external onlyOwner {
-        _revokeRole(DISSOLVER_ROLE, account);
+    function revokeDissolverRole(address account) external {
+        revokeRole(DISSOLVER_ROLE, account);
     }
 
-    function grantDissolverRole(address account) external onlyOwner {
-        _grantRole(DISSOLVER_ROLE, account);
+    function grantDissolverRole(address account) external {
+        grantRole(DISSOLVER_ROLE, account);
     }
 
     function extendExpiry(uint256 expiryDate)
@@ -127,9 +127,23 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable {
         contractExpiry = expiryDate;
     }
 
-    /// @inheritdoc	ERC20
     function decimals() public pure override returns (uint8) {
         return DECIMALS;
+    }
+
+    function release() onlyOwner external returns (bool) {
+        require(block.timestamp > contractExpiry, "contract expiry not reached");
+        // Open up funds for pbm owner
+        uint256 underlyingBalance = underlyingToken.balanceOf(address(this));
+        underlyingToken.safeTransfer(owner, underlyingBalance);
+        return true;
+    }
+
+    function recover(address account) external onlyOwner returns (uint256) {
+        uint256 overBalance = underlyingToken.balanceOf(address(this)) - totalSupply();
+        _mint(account, overBalance);
+        return overBalance;
+
     }
 
     function _beforeTokenTransfer(
