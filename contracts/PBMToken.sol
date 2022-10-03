@@ -32,7 +32,7 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable, IPBM {
         _;
     }
 
-    modifier onlyDissovlerRecipients(address recipient) {
+    modifier onlyApprovedMerchant(address recipient) {
         require(hasRole(MERCHANT_ROLE, recipient), "recipient not an approved merchant");
         _;
     }
@@ -66,7 +66,7 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable, IPBM {
         _mint(toUser, amount);
     }
 
-    function redeem(address toUser, uint256 amount) external whenNotExpired onlyDissovlerRecipients(toUser) {
+    function redeem(address toUser, uint256 amount) external whenNotExpired onlyApprovedMerchant(toUser) {
         underlyingToken.safeTransfer(toUser, amount * peggedRatio);
         _burn(_msgSender(), amount);
     }
@@ -75,6 +75,7 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable, IPBM {
         require(block.timestamp > contractExpiry, "contract expiry not reached");
         uint256 underlyingBalance = underlyingToken.balanceOf(address(this));
         underlyingToken.safeTransfer(owner, underlyingBalance);
+        emit OwnerWithdrawal(_msgSender(), underlyingBalance);
         return true;
     }
 
@@ -88,15 +89,18 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable, IPBM {
 
     function revokeMerchantRole(address account) external {
         revokeRole(MERCHANT_ROLE, account);
+        emit MerchantRevoked(account, _msgSender());
     }
 
     function grantMerchantRole(address account) external {
         grantRole(MERCHANT_ROLE, account);
+        emit MerchantAdded(account, _msgSender());
     }
 
     function extendExpiry(uint256 expiryDate) external onlyOwner whenNotExpired {
         require(expiryDate > contractExpiry, "cannot shorten expiry date");
         contractExpiry = expiryDate;
+        emit CampaignExtended(_msgSender());
     }
 
     function recover(address account) external onlyOwner returns (uint256) {
