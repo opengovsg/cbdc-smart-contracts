@@ -19,7 +19,6 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable, IPBM {
 
     IERC20Metadata public immutable underlyingToken;
     address public immutable owner;
-    uint8 public constant peggedRatio = 1;
 
     uint256 public contractExpiry;
 
@@ -67,7 +66,7 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable, IPBM {
     }
 
     function redeem(address toUser, uint256 amount) external whenNotExpired onlyApprovedMerchant(toUser) {
-        underlyingToken.safeTransfer(toUser, amount * peggedRatio);
+        underlyingToken.safeTransfer(toUser, amount);
         _burn(_msgSender(), amount);
     }
 
