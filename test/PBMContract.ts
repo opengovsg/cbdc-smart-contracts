@@ -24,7 +24,7 @@ describe('PBM', () => {
   describe('roles and ownership', () => {
     it('get correct admin role', async () => {
       const { pbmToken, pbmDeployer } = await initBothContracts()
-      const merchantAdminRole = await pbmToken.DISSOLVER_ADMIN_ROLE()
+      const merchantAdminRole = await pbmToken.MERCHANT_ADMIN_ROLE()
 
       // Assertions
       expect(await pbmToken.owner()).to.be.equal(pbmDeployer.address)
@@ -33,7 +33,7 @@ describe('PBM', () => {
 
     it('admin can add merchant role', async () => {
       const { pbmToken, pbmDeployer } = await initBothContracts()
-      const merchantRole = await pbmToken.DISSOLVER_ROLE()
+      const merchantRole = await pbmToken.MERCHANT_ROLE()
 
       // Retrieves a random address
       const [, , randomAccount1] = await ethers.getSigners()
@@ -44,7 +44,7 @@ describe('PBM', () => {
 
     it('admin can remove merchant role', async () => {
       const { pbmToken, pbmDeployer, merchant } = await seedWalletStates()
-      const merchantRole = await pbmToken.DISSOLVER_ROLE()
+      const merchantRole = await pbmToken.MERCHANT_ROLE()
       const isMerchantBeforeChange = await pbmToken.hasRole(merchantRole, merchant.address)
 
       // Makes the role changes
@@ -58,8 +58,8 @@ describe('PBM', () => {
 
     it('non-admin cannot add/remove merchant role', async () => {
       const { pbmToken, merchant, resident } = await seedWalletStates()
-      const merchantRole = await pbmToken.DISSOLVER_ROLE()
-      const merchantAdminRole = await pbmToken.DISSOLVER_ADMIN_ROLE()
+      const merchantRole = await pbmToken.MERCHANT_ROLE()
+      const merchantAdminRole = await pbmToken.MERCHANT_ADMIN_ROLE()
 
       const unauthorisedGrant = pbmToken.connect(resident).grantDissolverRole(resident.address)
       const unauthorisedRemoval = pbmToken
@@ -78,7 +78,7 @@ describe('PBM', () => {
 
     it('merchant can renounce merchant role', async () => {
       const { pbmToken, merchant } = await seedWalletStates()
-      const merchantRole = await pbmToken.DISSOLVER_ROLE()
+      const merchantRole = await pbmToken.MERCHANT_ROLE()
       const isMerchantBeforeChange = await pbmToken.hasRole(merchantRole, merchant.address)
 
       // Merchant attempts to revoke
@@ -258,7 +258,7 @@ describe('PBM', () => {
         .connect(resident)
         .dissolveIntoDsgd(resident.address, pbmAmount(1))
 
-      await expect(selfDissolve).to.be.revertedWith('not a dissolver')
+      await expect(selfDissolve).to.be.revertedWith('recipient not an approved merchant')
     })
     it('should not be able to dissolve if no ownership of PBM ', async () => {
       const { pbmToken, merchant, initialResidentBalance } = await seedWalletStates()
@@ -364,7 +364,7 @@ describe('PBM', () => {
       const initialSupply = await pbmToken.totalSupply()
 
       // Attempts to pull out all existing funds from contract
-      const withdrawalTransaction = pbmToken.connect(pbmDeployer).release()
+      const withdrawalTransaction = pbmToken.connect(pbmDeployer).withdraw()
 
       await expect(withdrawalTransaction).to.be.revertedWith('contract expiry not reached')
       expect(await dsgdToken.balanceOf(pbmToken.address)).to.be.equal(initialSupply)
@@ -377,7 +377,7 @@ describe('PBM', () => {
 
       // Manipulate HRE to forward world time to expiry date
       await time.increaseTo(originalExpiryTime)
-      const withdrawalTransaction = pbmToken.connect(pbmDeployer).release()
+      const withdrawalTransaction = pbmToken.connect(pbmDeployer).withdraw()
 
       // Expect correct flow of dsgd tokens
       await expect(withdrawalTransaction).to.changeTokenBalances(
@@ -394,7 +394,7 @@ describe('PBM', () => {
       // Manipulate HRE to forward world time to expiry date
       await time.increaseTo(originalExpiryTime)
       // Makes transaction without owner credentials
-      const withdrawalTransaction = pbmToken.connect(resident).release()
+      const withdrawalTransaction = pbmToken.connect(resident).withdraw()
 
       // Expect correct flow of dsgd tokens
       await expect(withdrawalTransaction).to.be.revertedWith('not owner')

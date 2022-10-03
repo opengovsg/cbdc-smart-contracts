@@ -3,9 +3,9 @@ pragma solidity ^0.8.8;
 
 import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./DSGDToken.sol";
 import "hardhat/console.sol";
 
 /// @title PBM Contract for Campaign Organisers
@@ -13,23 +13,17 @@ import "hardhat/console.sol";
 /// @dev Most functions utilises OpenZepellin, with constrained modifiers in place to tighten up access control
 
 contract PBMToken is ERC20Pausable, AccessControlEnumerable {
-    using SafeERC20 for DSGDToken;
+    using SafeERC20 for IERC20Metadata;
 
-    DSGDToken private underlyingToken;
+    IERC20Metadata public immutable underlyingToken;
     address public immutable owner;
-    uint8 private constant DECIMALS = 18;
-
-    /// @notice Returns the static pegging of PBM token to underlying token, with decimal difference accounted for
-    /// @dev  Calculated pegged ratio as underlying.decimals() / pbm * pbm.decimals() to signifiy 1-1 pegging
-    /// @return static pegging with decimal difference accounted for
-    uint8 public immutable peggedRatio;
+    uint8 public constant peggedRatio = 1;
 
     uint256 public contractExpiry;
 
     // RBAC related constants
-    bytes32 public constant DISSOLVER_ROLE = keccak256("DISSOLVER_ROLE");
-    bytes32 public constant DISSOLVER_ADMIN_ROLE =
-        keccak256("DISSOLVER_ADMIN_ROLE");
+    bytes32 public constant MERCHANT_ROLE = keccak256("MERCHANT_ROLE");
+    bytes32 public constant MERCHANT_ADMIN_ROLE = keccak256("MERCHANT_ADMIN_ROLE");
 
     modifier onlyOwner() {
         require(_msgSender() == owner, "not owner");
@@ -37,7 +31,7 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable {
     }
 
     modifier onlyDissovlerRecipients(address recipient) {
-        require(hasRole(DISSOLVER_ROLE, recipient), "not a dissolver");
+        require(hasRole(MERCHANT_ROLE, recipient), "recipient not an approved merchant");
         _;
     }
 
@@ -54,14 +48,14 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable {
     ) ERC20(_name, _symbol) {
         owner = _msgSender();
         // Initialises the base DSGD token
-        underlyingToken = DSGDToken(baseDsgdAddress);
-        peggedRatio = underlyingToken.decimals() / DECIMALS;
+        underlyingToken = IERC20Metadata(baseDsgdAddress);
+        assert(decimals() != 0);
 
-        // Sets up required roles
-        _grantRole(DISSOLVER_ADMIN_ROLE, owner);
-        _setRoleAdmin(DISSOLVER_ROLE, DISSOLVER_ADMIN_ROLE);
+        // Sets up required roles for merchant management
+        _grantRole(MERCHANT_ADMIN_ROLE, owner);
+        _setRoleAdmin(MERCHANT_ROLE, MERCHANT_ADMIN_ROLE);
 
-        // Set the contract expiry
+        // Sets the contract expiry
         contractExpiry = _contractExpiry;
     }
 
@@ -70,17 +64,8 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable {
     /// @param recipient address of recipient to mint to
     /// @param amount pbm tokens to be minted, expressed in this contracts decimal
     /// @return returns success state of mint
-    function addSupply(address recipient, uint256 amount)
-        external
-        onlyOwner
-        whenNotExpired
-        returns (bool)
-    {
-        underlyingToken.safeTransferFrom(
-            _msgSender(),
-            address(this),
-            amount * peggedRatio
-        );
+    function addSupply(address recipient, uint256 amount) external onlyOwner whenNotExpired returns (bool) {
+        underlyingToken.safeTransferFrom(_msgSender(), address(this), amount);
         _mint(recipient, amount);
         return true;
     }
@@ -98,6 +83,13 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable {
         _burn(_msgSender(), amount);
     }
 
+    function withdraw() external onlyOwner returns (bool) {
+        require(block.timestamp > contractExpiry, "contract expiry not reached");
+        uint256 underlyingBalance = underlyingToken.balanceOf(address(this));
+        underlyingToken.safeTransfer(owner, underlyingBalance);
+        return true;
+    }
+
     /// @notice Pauses all transfer activity (specified in ERC20Pausable). Limited to owner
     /// @dev extension overrides _beforeTokenTransfer's implementation.
     function pause() external onlyOwner {
@@ -111,47 +103,38 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable {
     }
 
     function revokeDissolverRole(address account) external {
-        revokeRole(DISSOLVER_ROLE, account);
+        revokeRole(MERCHANT_ROLE, account);
     }
 
     function grantDissolverRole(address account) external {
-        grantRole(DISSOLVER_ROLE, account);
+        grantRole(MERCHANT_ROLE, account);
     }
 
-    function extendExpiry(uint256 expiryDate)
-        external
-        onlyOwner
-        whenNotExpired
-    {
+    function extendExpiry(uint256 expiryDate) external onlyOwner whenNotExpired {
         require(expiryDate > contractExpiry, "cannot shorten expiry date");
         contractExpiry = expiryDate;
     }
 
-    function decimals() public pure override returns (uint8) {
-        return DECIMALS;
-    }
-
-    function release() onlyOwner external returns (bool) {
-        require(block.timestamp > contractExpiry, "contract expiry not reached");
-        // Open up funds for pbm owner
-        uint256 underlyingBalance = underlyingToken.balanceOf(address(this));
-        underlyingToken.safeTransfer(owner, underlyingBalance);
-        return true;
-    }
-
     function recover(address account) external onlyOwner returns (uint256) {
         uint256 overBalance = underlyingToken.balanceOf(address(this)) - totalSupply();
+
         _mint(account, overBalance);
         return overBalance;
+    }
 
+    function decimals() public view override returns (uint8) {
+        try underlyingToken.decimals() returns (uint8 value) {
+            return value;
+        } catch {
+            return 0;
+        }
     }
 
     function _beforeTokenTransfer(
         address from,
         address to,
         uint256 tokenId
-    ) internal virtual override(ERC20Pausable) {
-        require(block.timestamp < contractExpiry, "contract expired");
+    ) internal virtual override(ERC20Pausable) whenNotExpired {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 }
