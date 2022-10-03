@@ -58,13 +58,10 @@ describe('PBM', () => {
 
     it('non-admin cannot add/remove merchant role', async () => {
       const { pbmToken, merchant, resident } = await seedWalletStates()
-      const merchantRole = await pbmToken.MERCHANT_ROLE()
       const merchantAdminRole = await pbmToken.MERCHANT_ADMIN_ROLE()
 
       const unauthorisedGrant = pbmToken.connect(resident).grantMerchantRole(resident.address)
-      const unauthorisedRemoval = pbmToken
-        .connect(resident)
-        .revokeRole(merchantRole, merchant.address)
+      const unauthorisedRemoval = pbmToken.connect(resident).revokeMerchantRole(merchant.address)
 
       // Assertions
       await expect(unauthorisedGrant).to.be.revertedWith(

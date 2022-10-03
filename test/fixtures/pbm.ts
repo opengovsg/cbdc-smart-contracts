@@ -42,9 +42,8 @@ export const seedWalletStates = deployments.createFixture(async ({ ethers }) => 
   const pbmTokenAsOwner = pbmToken.connect(pbmDeployer)
 
   await pbmTokenAsOwner.wrapMint(resident.address, pbmAmount(initialSeedAmount))
-  const dissolverRoleHash = await pbmTokenAsOwner.MERCHANT_ROLE()
 
-  await pbmTokenAsOwner.grantRole(dissolverRoleHash, merchant.address)
+  await pbmTokenAsOwner.grantMerchantRole(merchant.address)
 
   return {
     pbmToken,
