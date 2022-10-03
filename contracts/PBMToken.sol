@@ -6,13 +6,15 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import "./interfaces/IPBM.sol";
+
 import "hardhat/console.sol";
 
 /// @title PBM Contract for Campaign Organisers
 /// @notice Contract to govern PBM related operations for a campaign organiser
 /// @dev Most functions utilises OpenZepellin, with constrained modifiers in place to tighten up access control
 
-contract PBMToken is ERC20Pausable, AccessControlEnumerable {
+contract PBMToken is ERC20Pausable, AccessControlEnumerable, IPBM {
     using SafeERC20 for IERC20Metadata;
 
     IERC20Metadata public immutable underlyingToken;
@@ -59,27 +61,13 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable {
         contractExpiry = _contractExpiry;
     }
 
-    /// @notice Similar to a deposit function of a wrapped token. Caller has to approve contract's address on underlying token. Limited to owner
-    /// @dev Current logic for decimal conversion is not finalised
-    /// @param recipient address of recipient to mint to
-    /// @param amount pbm tokens to be minted, expressed in this contracts decimal
-    /// @return returns success state of mint
-    function addSupply(address recipient, uint256 amount) external onlyOwner whenNotExpired returns (bool) {
+    function wrapMint(address toUser, uint256 amount) external onlyOwner whenNotExpired {
         underlyingToken.safeTransferFrom(_msgSender(), address(this), amount);
-        _mint(recipient, amount);
-        return true;
+        _mint(toUser, amount);
     }
 
-    /// @notice Dissolves PBM tokens into actual underlying token. Used for resident -> merchant transactions
-    /// @dev Utilises contract call to underlying token for transfer, proceeds to then burn PBM tokens dissolved (with accordance to ratio).
-    /// @param recipient address of the recipient to transfer to. In this context, refers to merchant.
-    /// @param amount amount, in PBM decimals, to be transferred
-    function dissolveIntoDsgd(address recipient, uint256 amount)
-        external
-        whenNotExpired
-        onlyDissovlerRecipients(recipient)
-    {
-        underlyingToken.safeTransfer(recipient, amount * peggedRatio);
+    function redeem(address toUser, uint256 amount) external whenNotExpired onlyDissovlerRecipients(toUser) {
+        underlyingToken.safeTransfer(toUser, amount * peggedRatio);
         _burn(_msgSender(), amount);
     }
 
@@ -90,23 +78,19 @@ contract PBMToken is ERC20Pausable, AccessControlEnumerable {
         return true;
     }
 
-    /// @notice Pauses all transfer activity (specified in ERC20Pausable). Limited to owner
-    /// @dev extension overrides _beforeTokenTransfer's implementation.
     function pause() external onlyOwner {
         _pause();
     }
 
-    /// @notice Pauses all transfer activity (specified in ERC20Pausable). Limited to owner
-    /// @dev extension overrides _beforeTokenTransfer's implementation.
     function unpause() external onlyOwner {
         _unpause();
     }
 
-    function revokeDissolverRole(address account) external {
+    function revokeMerchantRole(address account) external {
         revokeRole(MERCHANT_ROLE, account);
     }
 
-    function grantDissolverRole(address account) external {
+    function grantMerchantRole(address account) external {
         grantRole(MERCHANT_ROLE, account);
     }
 

@@ -37,7 +37,7 @@ describe('PBM', () => {
 
       // Retrieves a random address
       const [, , randomAccount1] = await ethers.getSigners()
-      await pbmToken.connect(pbmDeployer).grantDissolverRole(randomAccount1.address)
+      await pbmToken.connect(pbmDeployer).grantMerchantRole(randomAccount1.address)
 
       expect(await pbmToken.hasRole(merchantRole, randomAccount1.address)).to.be.equal(true)
     })
@@ -48,7 +48,7 @@ describe('PBM', () => {
       const isMerchantBeforeChange = await pbmToken.hasRole(merchantRole, merchant.address)
 
       // Makes the role changes
-      await pbmToken.connect(pbmDeployer).revokeDissolverRole(merchant.address)
+      await pbmToken.connect(pbmDeployer).revokeMerchantRole(merchant.address)
       const isMerchantAfterChange = await pbmToken.hasRole(merchantRole, merchant.address)
 
       // Assertions
@@ -61,7 +61,7 @@ describe('PBM', () => {
       const merchantRole = await pbmToken.MERCHANT_ROLE()
       const merchantAdminRole = await pbmToken.MERCHANT_ADMIN_ROLE()
 
-      const unauthorisedGrant = pbmToken.connect(resident).grantDissolverRole(resident.address)
+      const unauthorisedGrant = pbmToken.connect(resident).grantMerchantRole(resident.address)
       const unauthorisedRemoval = pbmToken
         .connect(resident)
         .revokeRole(merchantRole, merchant.address)
@@ -102,9 +102,9 @@ describe('PBM', () => {
       // Attempt to mint PBM tokens to a random address
       const mintToRandom = pbmToken
         .connect(pbmDeployer)
-        .addSupply(randomAccount1.address, pbmAmount(40))
+        .wrapMint(randomAccount1.address, pbmAmount(40))
 
-      const mintToSelf = pbmToken.connect(pbmDeployer).addSupply(pbmDeployer.address, pbmAmount(40))
+      const mintToSelf = pbmToken.connect(pbmDeployer).wrapMint(pbmDeployer.address, pbmAmount(40))
 
       // Assertions
       await expect(mintToRandom).to.be.revertedWith('ERC20: insufficient allowance')
@@ -122,7 +122,7 @@ describe('PBM', () => {
 
       // Init contract to be associated to owner (treat as connect(pbmDeployer))
       const pbmTokenAsOwner: PBMToken = await ethers.getContract('PBMToken', pbmDeployer)
-      const mintToSelf = pbmTokenAsOwner.addSupply(pbmDeployer.address, pbmAmount(10))
+      const mintToSelf = pbmTokenAsOwner.wrapMint(pbmDeployer.address, pbmAmount(10))
 
       // Assertions
       await expect(mintToSelf).to.changeTokenBalance(
@@ -148,7 +148,7 @@ describe('PBM', () => {
 
       const unauthorisedMintTransaction = pbmToken
         .connect(randomAccount1)
-        .addSupply(randomAccount1.address, pbmAmount(10))
+        .wrapMint(randomAccount1.address, pbmAmount(10))
 
       // Assertions
       await expect(unauthorisedMintTransaction).to.be.revertedWith('not owner')
@@ -186,12 +186,12 @@ describe('PBM', () => {
       expect(await pbmToken.paused()).to.be.equal(true)
       // Assert that no redemptions can happen while paused
       await expect(
-        pbmToken.connect(resident).dissolveIntoDsgd(merchant.address, pbmAmount(1))
+        pbmToken.connect(resident).redeem(merchant.address, pbmAmount(1))
       ).to.be.revertedWith('ERC20Pausable: token transfer while paused')
 
       // Assert that no minting can happen while paused
       await expect(
-        pbmToken.connect(pbmDeployer).addSupply(resident.address, pbmAmount(10))
+        pbmToken.connect(pbmDeployer).wrapMint(resident.address, pbmAmount(10))
       ).to.be.revertedWith('ERC20Pausable: token transfer while paused')
 
       // Assert that no transfers can happen while paused
@@ -214,7 +214,7 @@ describe('PBM', () => {
 
       await pbmTokenAsOwner.pause()
       const unpauseContract = pbmTokenAsOwner.unpause()
-      const mintToResident = pbmTokenAsOwner.addSupply(resident.address, pbmAmount(10))
+      const mintToResident = pbmTokenAsOwner.wrapMint(resident.address, pbmAmount(10))
 
       await expect(unpauseContract).to.emit(pbmToken, 'Unpaused')
       await expect(mintToResident).to.emit(pbmToken, 'Transfer')
@@ -227,9 +227,7 @@ describe('PBM', () => {
       const { pbmToken, dsgdToken, resident, merchant, pbmDeployer, initialResidentBalance } =
         await seedWalletStates()
 
-      const dissolveToMerchant = pbmToken
-        .connect(resident)
-        .dissolveIntoDsgd(merchant.address, pbmAmount(1))
+      const dissolveToMerchant = pbmToken.connect(resident).redeem(merchant.address, pbmAmount(1))
 
       // Assertions
       await expect(dissolveToMerchant).to.changeTokenBalances(
@@ -254,18 +252,14 @@ describe('PBM', () => {
     it('should not be able to dissolve to non-merchants', async () => {
       const { pbmToken, resident } = await seedWalletStates()
 
-      const selfDissolve = pbmToken
-        .connect(resident)
-        .dissolveIntoDsgd(resident.address, pbmAmount(1))
+      const selfDissolve = pbmToken.connect(resident).redeem(resident.address, pbmAmount(1))
 
       await expect(selfDissolve).to.be.revertedWith('recipient not an approved merchant')
     })
     it('should not be able to dissolve if no ownership of PBM ', async () => {
       const { pbmToken, merchant, initialResidentBalance } = await seedWalletStates()
 
-      const nonHolderDissolve = pbmToken
-        .connect(merchant)
-        .dissolveIntoDsgd(merchant.address, pbmAmount(1))
+      const nonHolderDissolve = pbmToken.connect(merchant).redeem(merchant.address, pbmAmount(1))
 
       await expect(nonHolderDissolve).to.be.revertedWith('ERC20: burn amount exceeds balance')
       expect(await pbmToken.totalSupply()).to.be.equal(pbmAmount(initialResidentBalance))
@@ -322,12 +316,12 @@ describe('PBM', () => {
 
       // Assert that no redemptions can happen while expired
       await expect(
-        pbmToken.connect(resident).dissolveIntoDsgd(merchant.address, pbmAmount(1))
+        pbmToken.connect(resident).redeem(merchant.address, pbmAmount(1))
       ).to.be.revertedWith('contract expired')
 
       // Assert that no minting can happen while expired
       await expect(
-        pbmToken.connect(pbmDeployer).addSupply(resident.address, pbmAmount(10))
+        pbmToken.connect(pbmDeployer).wrapMint(resident.address, pbmAmount(10))
       ).to.be.revertedWith('contract expired')
 
       // Assert that no transfers can happen while expired
