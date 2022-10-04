@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: MIT
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 pragma solidity ^0.8.8;
 
 /// @title PBM Token (via ERC20 standard)
 /// @notice Interface of the Purpose Bound Money (PBM) token for RedeemX
 
-interface IPBM {
+interface IPBM is IERC20 {
     /// @dev Emitted after a PBM redemption takes place
     /// @param fromUser The address of the recipient (person redeeming)
     /// @param toUser The address of the merchant (person)
     /// @param amount The amount being redeemed for
-    event Redemption(
-        address indexed fromUser,
-        address indexed toUser,
-        uint256 amount
-    );
+    event Redemption(address indexed fromUser, address indexed toUser, uint256 amount);
 
     /// @dev Emitted when a PBM Owner successfully withdraws underlying tokens
     /// @param account The account (PBM Owner) that made a withdrawal

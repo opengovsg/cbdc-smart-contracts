@@ -73,18 +73,19 @@ describe('PBM', () => {
       )
     })
 
-    it('merchant can renounce merchant role', async () => {
+    it('merchant cannot renounce merchant role', async () => {
       const { pbmToken, merchant } = await seedWalletStates()
       const merchantRole = await pbmToken.MERCHANT_ROLE()
-      const isMerchantBeforeChange = await pbmToken.hasRole(merchantRole, merchant.address)
 
       // Merchant attempts to revoke
-      await pbmToken.connect(merchant).renounceRole(merchantRole, merchant.address)
-      const isMerchantAfterChange = await pbmToken.hasRole(merchantRole, merchant.address)
+      const merchantSelfRenounceTransaction = pbmToken
+        .connect(merchant)
+        .renounceRole(merchantRole, merchant.address)
 
       // Assertions
-      expect(isMerchantBeforeChange).to.be.equal(true)
-      expect(isMerchantAfterChange).to.be.equal(false)
+      await expect(merchantSelfRenounceTransaction).to.be.revertedWith(
+        'feature blocked for current trial'
+      )
     })
   })
 
