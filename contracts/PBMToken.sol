@@ -3,100 +3,201 @@ pragma solidity ^0.8.8;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
-import "./DSGDToken.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-/// @title PBM Contract for Campaign Organisers
-/// @notice Contract to govern PBM related operations for a campaign organiser
-/// @dev Most functions utilises OpenZepellin, with constrained modifiers in place to tighten up access control
+import "./interfaces/IPBM.sol";
 
-contract PBMToken is ERC20Pausable, AccessControl {
-    DSGDToken private underlyingToken;
+import "hardhat/console.sol";
+
+/// @title PBM contract
+/// @author Open Government Products
+/// @notice Implementation of the IPBM interface
+
+contract PBMToken is ERC20Pausable, AccessControl, IPBM {
+    using SafeERC20 for IERC20Metadata;
+
+    IERC20Metadata public immutable underlyingToken;
     address public immutable owner;
-    uint8 private constant DECIMALS = 18;
 
-    // Defines the 1-1 pegging between PBM and DSGD, accounting for decimal
-    uint8 private constant PEGGING_TO_BASE_TOKEN = 1;
-
-    /// @notice Returns the static pegging of PBM token to underlying token, with decimal difference accounted for
-    /// @dev  Calculated as ratio underlying * underlying.decimals() / pbm * pbm.decimals()
-    /// @return static pegging with decimal difference accounted for
-    uint8 public immutable ratio;
+    uint256 public contractExpiry;
 
     // RBAC related constants
-    bytes32 public constant DISSOLVER_ROLE = keccak256("DISSOLVER_ROLE");
-    bytes32 public constant DISSOLVER_ADMIN_ROLE =
-        keccak256("DISSOLVER_ADMIN_ROLE");
+    bytes32 public constant MERCHANT_ROLE = keccak256("MERCHANT_ROLE");
+    bytes32 public constant MERCHANT_ADMIN_ROLE = keccak256("MERCHANT_ADMIN_ROLE");
 
     modifier onlyOwner() {
-        require(_msgSender() == owner, "Not owner");
+        require(_msgSender() == owner, "not owner");
         _;
     }
 
-    modifier onlyDissovlerRecipients(address recipient) {
-        require(hasRole(DISSOLVER_ROLE, recipient) == true, "not a dissolver");
+    modifier onlyApprovedMerchant(address recipient) {
+        require(hasRole(MERCHANT_ROLE, recipient), "recipient not an approved merchant");
+        _;
+    }
+
+    modifier whenNotExpired() {
+        require(block.timestamp < contractExpiry, "contract expired");
         _;
     }
 
     constructor(
         address baseDsgdAddress,
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        uint256 _contractExpiry
     ) ERC20(_name, _symbol) {
         owner = _msgSender();
         // Initialises the base DSGD token
-        underlyingToken = DSGDToken(baseDsgdAddress);
-        ratio = PEGGING_TO_BASE_TOKEN * (underlyingToken.decimals() / DECIMALS);
+        underlyingToken = IERC20Metadata(baseDsgdAddress);
+        assert(decimals() != 0);
 
-        // Sets up required roles
-        _grantRole(DISSOLVER_ADMIN_ROLE, owner);
-        _setRoleAdmin(DISSOLVER_ROLE, DISSOLVER_ADMIN_ROLE);
+        // Sets up required roles for merchant management
+        _grantRole(MERCHANT_ADMIN_ROLE, owner);
+        _setRoleAdmin(MERCHANT_ROLE, MERCHANT_ADMIN_ROLE);
+
+        // Sets the contract expiry
+        contractExpiry = _contractExpiry;
     }
 
-    /// @notice Similar to a deposit function of a wrapped token. Caller has to approve contract's address on underlying token. Limited to owner
-    /// @dev Current logic for decimal conversion is not finalised
-    /// @param recipient address of recipient to mint to
-    /// @param amount pbm token s to be minted, expressed in this contracts decimal
-    /// @return returns success state of mint
-    function addSupply(address recipient, uint256 amount)
-        external
-        onlyOwner
-        returns (bool)
-    {
-        underlyingToken.transferFrom(
-            _msgSender(),
-            address(this),
-            amount * ratio
-        );
-        _mint(recipient, amount);
-        return true;
+    /**
+     * @dev Allows owner/minter to mint tokens from underlying tokens
+     *
+     * PREREQUISITE: Owners/Minters should have already approved this contract address to spend the underlying tokens
+     * on behalf of the owner/minter.
+     *
+     * Requirements:
+     *
+     * - the caller must be `owner`.
+     * - the contract is not paused
+     * - the contract is not expired
+     * - there has to be sufficient underlying token held by the owners that have been approved for
+     *
+     *  Emits a { Transfer } on success, inherited from {ERC20}
+     */
+    function wrapMint(address toUser, uint256 amount) external onlyOwner whenNotExpired {
+        underlyingToken.safeTransferFrom(_msgSender(), address(this), amount);
+        _mint(toUser, amount);
     }
 
-    /// @notice Dissolves PBM tokens into actual underlying token. Used for resident -> merchant transactions
-    /// @dev Utilises contract call to underlying token for transfer, proceeds to then burn PBM tokens dissolved (with accordance to ratio).
-    /// @param recipient address of the recipient to transfer to. In this context, refers to merchant.
-    /// @param amount amount, in PBM decimals, to be transferred
-    function dissolveIntoDsgd(address recipient, uint256 amount)
-        external
-        onlyDissovlerRecipients(recipient)
-    {
-        underlyingToken.transfer(recipient, amount * ratio);
+    /**
+     * @dev Allows PBM recipients to unwrap and credit underlying token to a merchant
+     *
+     * Requirements:
+     *
+     * - the caller must have already owned PBM tokens
+     * - the contract is not paused
+     * - the contract is not expired
+     *
+     * Emits a { Redemption } on success
+     */
+    function redeem(address toUser, uint256 amount) external whenNotExpired onlyApprovedMerchant(toUser) {
+        underlyingToken.safeTransfer(toUser, amount);
         _burn(_msgSender(), amount);
     }
 
-    /// @notice Pauses all transfer activity (specified in ERC20Pausable). Limited to owner
-    /// @dev extension overrides _beforeTokenTransfer's implementation.
+    /**
+     * @dev Allows PBM owner to withdraw a campaign once the stipulated conditions are met
+     *
+     * For this implementation, an owner should be allowed to withdraw all unused DSGD
+     * after a pre-determined expiry has been met
+     *
+
+     * Requirements:
+     *
+     * - the contract is already expired
+     * - the caller is owner
+     *
+     */
+    function withdraw() external onlyOwner returns (bool) {
+        require(block.timestamp > contractExpiry, "contract expiry not reached");
+        uint256 underlyingBalance = underlyingToken.balanceOf(address(this));
+        underlyingToken.safeTransfer(owner, underlyingBalance);
+        emit OwnerWithdrawal(_msgSender(), underlyingBalance);
+        return true;
+    }
+
+    /**
+     * @dev Allows for pausing of contract activities
+     *
+     * Caller has to be owner
+     *
+     */
     function pause() external onlyOwner {
         _pause();
     }
 
-    /// @notice Pauses all transfer activity (specified in ERC20Pausable). Limited to owner
-    /// @dev extension overrides _beforeTokenTransfer's implementation.
+    /**
+     * @dev Allows for resumption of an already paused contract of contract by owner
+     *
+     * Caller has to be owner
+     *
+     */
     function unpause() external onlyOwner {
         _unpause();
     }
 
-    /// @inheritdoc	ERC20
-    function decimals() public pure override returns (uint8) {
-        return DECIMALS;
+    /// @dev Implemented as a wrapper of {AccessControl}
+    /// @inheritdoc	IPBM
+    function revokeMerchantRole(address account) external {
+        revokeRole(MERCHANT_ROLE, account);
+        emit MerchantRevoked(account, _msgSender());
+    }
+
+    /// @dev Implemented as a wrapper of {AccessControl}
+    /// @inheritdoc	IPBM
+    function grantMerchantRole(address account) external {
+        grantRole(MERCHANT_ROLE, account);
+        emit MerchantAdded(account, _msgSender());
+    }
+
+    /// @inheritdoc	IPBM
+    function extendExpiry(uint256 expiryDate) external onlyOwner whenNotExpired {
+        require(expiryDate > contractExpiry, "cannot shorten expiry date");
+        contractExpiry = expiryDate;
+        emit CampaignExtended(_msgSender());
+    }
+
+    /// @dev Additional control measure to maintain total supply parity should underlying tokens be credited to contract
+    function recover(address account) external onlyOwner returns (uint256) {
+        uint256 overBalance = underlyingToken.balanceOf(address(this)) - totalSupply();
+
+        _mint(account, overBalance);
+        return overBalance;
+    }
+
+    /// @inheritdoc ERC20
+    function decimals() public view override returns (uint8) {
+        try underlyingToken.decimals() returns (uint8 value) {
+            return value;
+        } catch {
+            return 0;
+        }
+    }
+
+    /**
+     * @dev Overriden functionality to prevent self-renouncing of roles from {AccessControl}
+     *
+     * This is a temporary measure for the context of this trial.
+     *
+     */
+    function renounceRole(bytes32 _role, address _account) public override {
+        require(false, "feature blocked for current trial");
+    }
+
+    /**
+     * @dev Implements additional contract expiry checks before any token transfer
+     *
+     * NOTE: _beforeTokenTransfer is a hook provided from {ERC20Pausable}. This hook is called before any
+     * token transfers/mints.
+     *
+     * @inheritdoc ERC20Pausable
+     */
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual override(ERC20Pausable) whenNotExpired {
+        super._beforeTokenTransfer(from, to, tokenId);
     }
 }

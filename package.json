@@ -20,7 +20,7 @@
     "@ethersproject/abi": "^5.6.4",
     "@ethersproject/providers": "^5.6.8",
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.2",
-    "@nomicfoundation/hardhat-network-helpers": "^1.0.3",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.6",
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.13",
     "@nomiclabs/hardhat-etherscan": "^3.1.0",

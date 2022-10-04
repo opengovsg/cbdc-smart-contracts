@@ -1,5 +1,7 @@
 import { PBMToken } from '../typechain-types'
 import { ethers } from 'hardhat'
+import { time } from '@nomicfoundation/hardhat-network-helpers'
+
 import { expect } from 'chai'
 import { dsgdAmount, pbmAmount } from './helpers'
 import { initBothContracts, seedWalletStates } from './fixtures/pbm'
@@ -22,7 +24,7 @@ describe('PBM', () => {
   describe('roles and ownership', () => {
     it('get correct admin role', async () => {
       const { pbmToken, pbmDeployer } = await initBothContracts()
-      const merchantAdminRole = await pbmToken.DISSOLVER_ADMIN_ROLE()
+      const merchantAdminRole = await pbmToken.MERCHANT_ADMIN_ROLE()
 
       // Assertions
       expect(await pbmToken.owner()).to.be.equal(pbmDeployer.address)
@@ -31,22 +33,22 @@ describe('PBM', () => {
 
     it('admin can add merchant role', async () => {
       const { pbmToken, pbmDeployer } = await initBothContracts()
-      const merchantRole = await pbmToken.DISSOLVER_ROLE()
+      const merchantRole = await pbmToken.MERCHANT_ROLE()
 
       // Retrieves a random address
       const [, , randomAccount1] = await ethers.getSigners()
-      await pbmToken.connect(pbmDeployer).grantRole(merchantRole, randomAccount1.address)
+      await pbmToken.connect(pbmDeployer).grantMerchantRole(randomAccount1.address)
 
       expect(await pbmToken.hasRole(merchantRole, randomAccount1.address)).to.be.equal(true)
     })
 
     it('admin can remove merchant role', async () => {
       const { pbmToken, pbmDeployer, merchant } = await seedWalletStates()
-      const merchantRole = await pbmToken.DISSOLVER_ROLE()
+      const merchantRole = await pbmToken.MERCHANT_ROLE()
       const isMerchantBeforeChange = await pbmToken.hasRole(merchantRole, merchant.address)
 
       // Makes the role changes
-      await pbmToken.connect(pbmDeployer).revokeRole(merchantRole, merchant.address)
+      await pbmToken.connect(pbmDeployer).revokeMerchantRole(merchant.address)
       const isMerchantAfterChange = await pbmToken.hasRole(merchantRole, merchant.address)
 
       // Assertions
@@ -56,13 +58,10 @@ describe('PBM', () => {
 
     it('non-admin cannot add/remove merchant role', async () => {
       const { pbmToken, merchant, resident } = await seedWalletStates()
-      const merchantRole = await pbmToken.DISSOLVER_ROLE()
-      const merchantAdminRole = await pbmToken.DISSOLVER_ADMIN_ROLE()
+      const merchantAdminRole = await pbmToken.MERCHANT_ADMIN_ROLE()
 
-      const unauthorisedGrant = pbmToken.connect(resident).grantRole(merchantRole, resident.address)
-      const unauthorisedRemoval = pbmToken
-        .connect(resident)
-        .revokeRole(merchantRole, merchant.address)
+      const unauthorisedGrant = pbmToken.connect(resident).grantMerchantRole(resident.address)
+      const unauthorisedRemoval = pbmToken.connect(resident).revokeMerchantRole(merchant.address)
 
       // Assertions
       await expect(unauthorisedGrant).to.be.revertedWith(
@@ -74,18 +73,19 @@ describe('PBM', () => {
       )
     })
 
-    it('merchant can renounce merchant role', async () => {
+    it('merchant cannot renounce merchant role', async () => {
       const { pbmToken, merchant } = await seedWalletStates()
-      const merchantRole = await pbmToken.DISSOLVER_ROLE()
-      const isMerchantBeforeChange = await pbmToken.hasRole(merchantRole, merchant.address)
+      const merchantRole = await pbmToken.MERCHANT_ROLE()
 
       // Merchant attempts to revoke
-      await pbmToken.connect(merchant).renounceRole(merchantRole, merchant.address)
-      const isMerchantAfterChange = await pbmToken.hasRole(merchantRole, merchant.address)
+      const merchantSelfRenounceTransaction = pbmToken
+        .connect(merchant)
+        .renounceRole(merchantRole, merchant.address)
 
       // Assertions
-      expect(isMerchantBeforeChange).to.be.equal(true)
-      expect(isMerchantAfterChange).to.be.equal(false)
+      await expect(merchantSelfRenounceTransaction).to.be.revertedWith(
+        'feature blocked for current trial'
+      )
     })
   })
 
@@ -100,9 +100,9 @@ describe('PBM', () => {
       // Attempt to mint PBM tokens to a random address
       const mintToRandom = pbmToken
         .connect(pbmDeployer)
-        .addSupply(randomAccount1.address, pbmAmount(40))
+        .wrapMint(randomAccount1.address, pbmAmount(40))
 
-      const mintToSelf = pbmToken.connect(pbmDeployer).addSupply(pbmDeployer.address, pbmAmount(40))
+      const mintToSelf = pbmToken.connect(pbmDeployer).wrapMint(pbmDeployer.address, pbmAmount(40))
 
       // Assertions
       await expect(mintToRandom).to.be.revertedWith('ERC20: insufficient allowance')
@@ -120,7 +120,7 @@ describe('PBM', () => {
 
       // Init contract to be associated to owner (treat as connect(pbmDeployer))
       const pbmTokenAsOwner: PBMToken = await ethers.getContract('PBMToken', pbmDeployer)
-      const mintToSelf = pbmTokenAsOwner.addSupply(pbmDeployer.address, pbmAmount(10))
+      const mintToSelf = pbmTokenAsOwner.wrapMint(pbmDeployer.address, pbmAmount(10))
 
       // Assertions
       await expect(mintToSelf).to.changeTokenBalance(
@@ -146,10 +146,10 @@ describe('PBM', () => {
 
       const unauthorisedMintTransaction = pbmToken
         .connect(randomAccount1)
-        .addSupply(randomAccount1.address, pbmAmount(10))
+        .wrapMint(randomAccount1.address, pbmAmount(10))
 
       // Assertions
-      await expect(unauthorisedMintTransaction).to.be.revertedWith('Not owner')
+      await expect(unauthorisedMintTransaction).to.be.revertedWith('not owner')
 
       // Verify token supply remains intact (for sanity)
       expect(await pbmToken.totalSupply()).to.equal(pbmAmount(0))
@@ -182,23 +182,28 @@ describe('PBM', () => {
       // Assertions
 
       expect(await pbmToken.paused()).to.be.equal(true)
-      // Assert that no transfers can happen while paused
+      // Assert that no redemptions can happen while paused
       await expect(
-        pbmToken.connect(resident).dissolveIntoDsgd(merchant.address, pbmAmount(1))
+        pbmToken.connect(resident).redeem(merchant.address, pbmAmount(1))
       ).to.be.revertedWith('ERC20Pausable: token transfer while paused')
 
       // Assert that no minting can happen while paused
       await expect(
-        pbmToken.connect(pbmDeployer).addSupply(resident.address, pbmAmount(10))
+        pbmToken.connect(pbmDeployer).wrapMint(resident.address, pbmAmount(10))
+      ).to.be.revertedWith('ERC20Pausable: token transfer while paused')
+
+      // Assert that no transfers can happen while paused
+      await expect(
+        pbmToken.connect(resident).transfer(pbmDeployer.address, pbmAmount(10))
       ).to.be.revertedWith('ERC20Pausable: token transfer while paused')
     })
 
     it('should not be pausable by non-owner identities', async () => {
       const { pbmToken, resident, merchant, dsgdDeployer } = await seedWalletStates()
 
-      await expect(pbmToken.connect(resident).pause()).to.be.revertedWith('Not owner')
-      await expect(pbmToken.connect(merchant).pause()).to.be.revertedWith('Not owner')
-      await expect(pbmToken.connect(dsgdDeployer).pause()).to.be.revertedWith('Not owner')
+      await expect(pbmToken.connect(resident).pause()).to.be.revertedWith('not owner')
+      await expect(pbmToken.connect(merchant).pause()).to.be.revertedWith('not owner')
+      await expect(pbmToken.connect(dsgdDeployer).pause()).to.be.revertedWith('not owner')
     })
 
     it('should be un-pausable', async () => {
@@ -207,7 +212,7 @@ describe('PBM', () => {
 
       await pbmTokenAsOwner.pause()
       const unpauseContract = pbmTokenAsOwner.unpause()
-      const mintToResident = pbmTokenAsOwner.addSupply(resident.address, pbmAmount(10))
+      const mintToResident = pbmTokenAsOwner.wrapMint(resident.address, pbmAmount(10))
 
       await expect(unpauseContract).to.emit(pbmToken, 'Unpaused')
       await expect(mintToResident).to.emit(pbmToken, 'Transfer')
@@ -220,9 +225,7 @@ describe('PBM', () => {
       const { pbmToken, dsgdToken, resident, merchant, pbmDeployer, initialResidentBalance } =
         await seedWalletStates()
 
-      const dissolveToMerchant = pbmToken
-        .connect(resident)
-        .dissolveIntoDsgd(merchant.address, pbmAmount(1))
+      const dissolveToMerchant = pbmToken.connect(resident).redeem(merchant.address, pbmAmount(1))
 
       // Assertions
       await expect(dissolveToMerchant).to.changeTokenBalances(
@@ -247,21 +250,146 @@ describe('PBM', () => {
     it('should not be able to dissolve to non-merchants', async () => {
       const { pbmToken, resident } = await seedWalletStates()
 
-      const selfDissolve = pbmToken
-        .connect(resident)
-        .dissolveIntoDsgd(resident.address, pbmAmount(1))
+      const selfDissolve = pbmToken.connect(resident).redeem(resident.address, pbmAmount(1))
 
-      await expect(selfDissolve).to.be.revertedWith('not a dissolver')
+      await expect(selfDissolve).to.be.revertedWith('recipient not an approved merchant')
     })
     it('should not be able to dissolve if no ownership of PBM ', async () => {
       const { pbmToken, merchant, initialResidentBalance } = await seedWalletStates()
 
-      const nonHolderDissolve = pbmToken
-        .connect(merchant)
-        .dissolveIntoDsgd(merchant.address, pbmAmount(1))
+      const nonHolderDissolve = pbmToken.connect(merchant).redeem(merchant.address, pbmAmount(1))
 
       await expect(nonHolderDissolve).to.be.revertedWith('ERC20: burn amount exceeds balance')
       expect(await pbmToken.totalSupply()).to.be.equal(pbmAmount(initialResidentBalance))
+    })
+  })
+
+  describe('contract expiry', () => {
+    // TODO: Park this constants somewhere with fixtures
+    // TODO: Use moment for generating more human-readable timestamps
+    const EPOCH_TIME_IN_FUTURE = 1704067200
+
+    it('should be able to extend an expiry for active contract', async () => {
+      const { pbmToken, pbmDeployer } = await seedWalletStates()
+      // Attempts to extend contract expiry to 2024
+      await pbmToken.connect(pbmDeployer).extendExpiry(EPOCH_TIME_IN_FUTURE)
+      expect(await pbmToken.contractExpiry()).to.be.equal(EPOCH_TIME_IN_FUTURE)
+    })
+
+    it('should not be able to shorten expiry for active contract', async () => {
+      const { pbmToken, pbmDeployer } = await seedWalletStates()
+      const currentExpiryDate = await pbmToken.contractExpiry()
+
+      // Attempt to shorten the expiry date by 1 second
+      const reduceExpiryTransaction = pbmToken
+        .connect(pbmDeployer)
+        .extendExpiry(currentExpiryDate.sub(1))
+
+      await expect(reduceExpiryTransaction).to.be.revertedWith('cannot shorten expiry date')
+      expect(await pbmToken.contractExpiry()).to.be.equal(currentExpiryDate)
+    })
+
+    it('should not be able to extend an expiry for an already expired contract', async () => {
+      const { pbmToken, pbmDeployer } = await seedWalletStates()
+      const originalExpiryDate = await pbmToken.contractExpiry()
+
+      // Manipulate HRE to forward world time to expiry date
+      await time.increaseTo(originalExpiryDate)
+
+      // Attempts to extend contract expiry to 2024
+      const updateExpiryOnExpiredContractTransaction = pbmToken
+        .connect(pbmDeployer)
+        .extendExpiry(EPOCH_TIME_IN_FUTURE)
+
+      await expect(updateExpiryOnExpiredContractTransaction).to.be.revertedWith('contract expired')
+      expect(await pbmToken.contractExpiry()).to.be.equal(originalExpiryDate)
+    })
+
+    it('should freeze transaction activities on expiry', async () => {
+      const { pbmToken, pbmDeployer, merchant, resident } = await seedWalletStates()
+      const currentExpiryDate = await pbmToken.contractExpiry()
+
+      // Manipulate HRE to forward world time to expiry date
+      await time.increaseTo(currentExpiryDate)
+
+      // Assert that no redemptions can happen while expired
+      await expect(
+        pbmToken.connect(resident).redeem(merchant.address, pbmAmount(1))
+      ).to.be.revertedWith('contract expired')
+
+      // Assert that no minting can happen while expired
+      await expect(
+        pbmToken.connect(pbmDeployer).wrapMint(resident.address, pbmAmount(10))
+      ).to.be.revertedWith('contract expired')
+
+      // Assert that no transfers can happen while expired
+      await expect(
+        pbmToken.connect(resident).transfer(pbmDeployer.address, pbmAmount(10))
+      ).to.be.revertedWith('contract expired')
+    })
+  })
+
+  describe('transfers', () => {
+    it('can transfer to another identity', async () => {
+      const {
+        pbmToken,
+        resident: firstResident,
+        merchant: secondResident,
+      } = await seedWalletStates()
+
+      // Transfers to a second resident
+      const pbmTransfer = pbmToken
+        .connect(firstResident)
+        .transfer(secondResident.address, pbmAmount(10))
+
+      await expect(pbmTransfer).to.changeTokenBalances(
+        pbmToken,
+        [firstResident, secondResident],
+        [pbmAmount(-10), pbmAmount(10)]
+      )
+    })
+  })
+
+  describe('contract withdrawal', () => {
+    it('should not be able to withdraw before expiry', async () => {
+      const { pbmToken, pbmDeployer, dsgdToken } = await seedWalletStates()
+      const initialSupply = await pbmToken.totalSupply()
+
+      // Attempts to pull out all existing funds from contract
+      const withdrawalTransaction = pbmToken.connect(pbmDeployer).withdraw()
+
+      await expect(withdrawalTransaction).to.be.revertedWith('contract expiry not reached')
+      expect(await dsgdToken.balanceOf(pbmToken.address)).to.be.equal(initialSupply)
+    })
+
+    it('should be able to withdraw on expiry', async () => {
+      const { pbmToken, pbmDeployer, dsgdToken } = await seedWalletStates()
+      const originalExpiryTime = await pbmToken.contractExpiry()
+      const initialSupply = await pbmToken.totalSupply()
+
+      // Manipulate HRE to forward world time to expiry date
+      await time.increaseTo(originalExpiryTime)
+      const withdrawalTransaction = pbmToken.connect(pbmDeployer).withdraw()
+
+      // Expect correct flow of dsgd tokens
+      await expect(withdrawalTransaction).to.changeTokenBalances(
+        dsgdToken,
+        [pbmToken.address, pbmDeployer.address],
+        [initialSupply.mul(-1), initialSupply]
+      )
+    })
+
+    it('should not be able to withdraw by non-owner', async () => {
+      const { pbmToken, resident } = await seedWalletStates()
+      const originalExpiryTime = await pbmToken.contractExpiry()
+
+      // Manipulate HRE to forward world time to expiry date
+      await time.increaseTo(originalExpiryTime)
+      // Makes transaction without owner credentials
+      const withdrawalTransaction = pbmToken.connect(resident).withdraw()
+
+      // Expect correct flow of dsgd tokens
+      await expect(withdrawalTransaction).to.be.revertedWith('not owner')
     })
   })
 })
