@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interfaces/IPBM.sol";
+import "./access/AccessControlRx.sol";
 
 import "hardhat/console.sol";
 
@@ -14,7 +15,7 @@ import "hardhat/console.sol";
 /// @author Open Government Products
 /// @notice Implementation of the IPBM interface
 
-contract PBMToken is ERC20Pausable, AccessControl, IPBM {
+contract PBMToken is ERC20Pausable, AccessControlRx, IPBM {
     using SafeERC20 for IERC20Metadata;
 
     IERC20Metadata public immutable underlyingToken;
@@ -139,15 +140,15 @@ contract PBMToken is ERC20Pausable, AccessControl, IPBM {
 
     /// @dev Implemented as a wrapper of {AccessControl}
     /// @inheritdoc	IPBM
-    function revokeMerchantRole(address account) external {
-        revokeRole(MERCHANT_ROLE, account);
+    function revokeMerchantRole(address account) external onlyRole(getRoleAdmin(MERCHANT_ROLE)) {
+        _revokeRole(MERCHANT_ROLE, account);
         emit MerchantRevoked(account, _msgSender());
     }
 
     /// @dev Implemented as a wrapper of {AccessControl}
     /// @inheritdoc	IPBM
-    function grantMerchantRole(address account) external {
-        grantRole(MERCHANT_ROLE, account);
+    function grantMerchantRole(address account) external onlyRole(getRoleAdmin(MERCHANT_ROLE)) {
+        _grantRole(MERCHANT_ROLE, account);
         emit MerchantAdded(account, _msgSender());
     }
 
