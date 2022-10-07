@@ -15,9 +15,14 @@ TODO:
 describe('PBM', () => {
   describe('contract data', () => {
     it('get correct decimal', async () => {
-      const { pbmToken } = await initBothContracts()
+      const { pbmToken, dsgdToken } = await initBothContracts()
 
-      expect(await pbmToken.decimals()).to.be.equal(18)
+      // Retrieve decimals for the 2 contracts
+      const pbmDecimals = await pbmToken.decimals()
+      const dsgdDecimals = await dsgdToken.decimals()
+
+      // Assertions
+      expect(pbmDecimals).to.be.equal(dsgdDecimals)
     })
   })
 
