@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interfaces/IPBM.sol";
 
-import "hardhat/console.sol";
 
 /// @title PBM contract
 /// @author Open Government Products
@@ -42,15 +41,14 @@ contract PBMToken is ERC20Pausable, AccessControl, IPBM {
     }
 
     constructor(
-        address baseDsgdAddress,
+        address _underlyingAddress,
         string memory _name,
         string memory _symbol,
         uint256 _contractExpiry
     ) ERC20(_name, _symbol) {
         owner = _msgSender();
         // Initialises the base DSGD token
-        underlyingToken = IERC20Metadata(baseDsgdAddress);
-        assert(decimals() != 0);
+        underlyingToken = IERC20Metadata(_underlyingAddress);
 
         // Sets up required roles for merchant management
         _grantRole(MERCHANT_ADMIN_ROLE, owner);
