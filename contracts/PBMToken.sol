@@ -169,7 +169,7 @@ contract PBMToken is ERC20Pausable, AccessControl, IPBM {
         try underlyingToken.decimals() returns (uint8 value) {
             return value;
         } catch {
-            return 0;
+            return 18;
         }
     }
 
