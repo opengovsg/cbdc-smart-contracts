@@ -1,23 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.8;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 import "./interfaces/IPBM.sol";
-
 
 /// @title PBM contract
 /// @author Open Government Products
 /// @notice Implementation of the IPBM interface
 
-contract PBMToken is ERC20Pausable, AccessControl, IPBM {
-    using SafeERC20 for IERC20Metadata;
+contract PBMToken is ERC20PausableUpgradeable, AccessControlUpgradeable, IPBM {
+    using SafeERC20Upgradeable for IERC20MetadataUpgradeable;
 
-    IERC20Metadata public immutable underlyingToken;
-    address public immutable owner;
+    IERC20MetadataUpgradeable public underlyingToken;
+    address public owner;
 
     uint256 public contractExpiry;
 
@@ -40,15 +39,17 @@ contract PBMToken is ERC20Pausable, AccessControl, IPBM {
         _;
     }
 
-    constructor(
+    function initialize(
         address _underlyingAddress,
         string memory _name,
         string memory _symbol,
         uint256 _contractExpiry
-    ) ERC20(_name, _symbol) {
+    ) public initializer {
+        __ERC20_init(_name, _symbol);
+
         owner = _msgSender();
         // Initialises the base DSGD token
-        underlyingToken = IERC20Metadata(_underlyingAddress);
+        underlyingToken = IERC20MetadataUpgradeable(_underlyingAddress);
 
         // Sets up required roles for merchant management
         _grantRole(MERCHANT_ADMIN_ROLE, owner);
@@ -164,7 +165,7 @@ contract PBMToken is ERC20Pausable, AccessControl, IPBM {
         return overBalance;
     }
 
-    /// @inheritdoc ERC20
+    /// @inheritdoc ERC20Upgradeable
     function decimals() public view override returns (uint8) {
         try underlyingToken.decimals() returns (uint8 value) {
             return value;
@@ -174,7 +175,7 @@ contract PBMToken is ERC20Pausable, AccessControl, IPBM {
     }
 
     /**
-     * @dev Overriden functionality to prevent self-renouncing of roles from {AccessControl}
+     * @dev Overriden functionality to prevent self-renouncing of roles from {AccessControlUpgradeable}
      *
      * This is a temporary measure for the context of this trial.
      *
@@ -186,16 +187,16 @@ contract PBMToken is ERC20Pausable, AccessControl, IPBM {
     /**
      * @dev Implements additional contract expiry checks before any token transfer
      *
-     * NOTE: _beforeTokenTransfer is a hook provided from {ERC20Pausable}. This hook is called before any
+     * NOTE: _beforeTokenTransfer is a hook provided from {ERC20PausableUpgradeable}. This hook is called before any
      * token transfers/mints.
      *
-     * @inheritdoc ERC20Pausable
+     * @inheritdoc ERC20PausableUpgradeable
      */
     function _beforeTokenTransfer(
         address from,
         address to,
         uint256 tokenId
-    ) internal virtual override(ERC20Pausable) whenNotExpired {
+    ) internal virtual override(ERC20PausableUpgradeable) whenNotExpired {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 }
