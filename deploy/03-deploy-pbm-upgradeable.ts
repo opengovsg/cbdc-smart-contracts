@@ -26,7 +26,9 @@ const deployFunction: DeployFunction = async ({ deployments }) => {
   }
 
   // Retrieve underlying token deployment details (if any)
-  const dsgdContractAddress = getDeployedUnderlyingToken(chainId)
+  // Defaults to
+  const dsgdContractAddress =
+    (await deployments.get('DSGDToken')).address || getDeployedUnderlyingToken(chainId)
 
   // Deploy with contract factory
   const PbmUpgradeableToken = await ethers.getContractFactory('PBMTokenUpgradeable', {
@@ -45,9 +47,7 @@ const deployFunction: DeployFunction = async ({ deployments }) => {
   )
 
   await proxy.deployed()
-  const transactionReceipt = await proxy.deployTransaction.wait(
-    networkConfig[chainId].waitForConfirmations || 6
-  )
+  const transactionReceipt = await proxy.deployTransaction.wait()
 
   log(
     `[custom] deployed "PBMTokenUpgradeable" (tx: ${proxy.deployTransaction.hash}) at ${proxy.address} with ${transactionReceipt.gasUsed} gas.`
