@@ -1,6 +1,6 @@
 import { deployments } from 'hardhat'
 import { dsgdAmount, pbmAmount } from '../helpers'
-import { DSGDToken, PBMToken } from '../../typechain-types'
+import { DSGDToken, PBMTokenUpgradeable as PBMToken } from '../../typechain-types'
 
 // See benefits of fixtures here:
 // https://hardhat.org/tutorial/testing-contracts#reusing-common-test-setups-with-fixtures
@@ -9,14 +9,14 @@ import { DSGDToken, PBMToken } from '../../typechain-types'
 
 // Fixture for init-ing contracts
 export const initBothContracts = deployments.createFixture(async ({ deployments, ethers }) => {
-  await deployments.fixture(['all'])
+  await deployments.fixture(['pbm-upgradeable'])
 
   // Sets up identities
   const pbmDeployer = await ethers.getNamedSigner('PBMDeployer')
   const dsgdDeployer = await ethers.getNamedSigner('DSGDDeployer')
 
   // Setup contracts
-  const pbmToken: PBMToken = await ethers.getContract('PBMToken')
+  const pbmToken: PBMToken = await ethers.getContract('PBMTokenUpgradeable')
   const dsgdToken: DSGDToken = await ethers.getContract('DSGDToken')
 
   return {
