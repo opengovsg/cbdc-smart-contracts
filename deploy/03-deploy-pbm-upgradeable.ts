@@ -1,4 +1,4 @@
-import { DeployFunction } from 'hardhat-deploy/dist/types'
+import { DeployFunction, DeploymentSubmission } from 'hardhat-deploy/dist/types'
 import { network, ethers, upgrades } from 'hardhat'
 import { getDeployedUnderlyingToken } from '../helpers/network'
 import { networkConfig } from '../helper-hardhat-config'
@@ -18,7 +18,7 @@ const deployFunction: DeployFunction = async ({ deployments }) => {
   // Get Deployment configurations
   const { save, log } = deployments
   const pbmDeployer = await ethers.getNamedSigner('PBMDeployer')
-
+  const pastDeployment = await deployments.get('PBMTokenUpgradeable')
   const chainId = network.config.chainId
 
   if (!chainId) {
@@ -26,7 +26,6 @@ const deployFunction: DeployFunction = async ({ deployments }) => {
   }
 
   // Retrieve underlying token deployment details (if any)
-  // Defaults to
   const dsgdContractAddress =
     (await deployments.get('DSGDToken')).address || getDeployedUnderlyingToken(chainId)
 
@@ -34,17 +33,27 @@ const deployFunction: DeployFunction = async ({ deployments }) => {
   const PbmUpgradeableToken = await ethers.getContractFactory('PBMTokenUpgradeable', {
     signer: pbmDeployer,
   })
-  // See https://docs.openzeppelin.com/upgrades-plugins/1.x/#how-plugins-work
-  const proxy = await upgrades.deployProxy(
-    PbmUpgradeableToken,
-    [
-      dsgdContractAddress,
-      'Orchid PBM - UAT',
-      'TPBM',
-      networkConfig[chainId].expiryDate || tentativeExpiryDate,
-    ],
-    { kind: 'transparent' }
-  )
+
+  let proxy
+
+  // Do a transparent proxy upgrade if a proxy already exists
+  if (pastDeployment) {
+    proxy = await upgrades.upgradeProxy(pastDeployment.address, PbmUpgradeableToken, {
+      kind: 'transparent',
+    })
+  } else {
+    // See https://docs.openzeppelin.com/upgrades-plugins/1.x/#how-plugins-work for usage
+    proxy = await upgrades.deployProxy(
+      PbmUpgradeableToken,
+      [
+        dsgdContractAddress,
+        'Orchid PBM - UAT',
+        'TPBM',
+        networkConfig[chainId].expiryDate || tentativeExpiryDate,
+      ],
+      { kind: 'transparent' }
+    )
+  }
 
   await proxy.deployed()
   const transactionReceipt = await proxy.deployTransaction.wait()
@@ -53,21 +62,21 @@ const deployFunction: DeployFunction = async ({ deployments }) => {
     `[custom] deployed "PBMTokenUpgradeable" (tx: ${proxy.deployTransaction.hash}) at ${proxy.address} with ${transactionReceipt.gasUsed} gas.`
   )
 
+  // Manually saving/updating deployment + artifact with hardhat-deploy
+  const deploymentArtifact = await deployments.getExtendedArtifact('PBMTokenUpgradeable')
+  const proxyDeployments: DeploymentSubmission = {
+    address: proxy.address,
+    ...deploymentArtifact,
+  }
+
+  await save('PBMTokenUpgradeable', proxyDeployments)
+
   // Verification not needed for chains without access to etherscan (eg; local-nets)
   if (networkConfig[chainId].type !== 'local-net') {
     await verifyContract({
       address: proxy.address,
     })
   }
-
-  // Manually saving/updating deployment artifact with hardhat-deploy
-  const deploymentArtifact = await deployments.getExtendedArtifact('PBMTokenUpgradeable')
-  const proxyDeployments = {
-    address: proxy.address,
-    ...deploymentArtifact,
-  }
-
-  await save('PBMTokenUpgradeable', proxyDeployments)
 }
 
 export default deployFunction
