@@ -3,6 +3,7 @@ interface NetworkConfigItem {
   type: 'main-net' | 'test-net' | 'local-net'
   underlyingTokenAddress?: string
   waitForConfirmations?: number
+  expiryDate?: number
 }
 
 export const networkConfig: { [chainId: string]: NetworkConfigItem } = {
@@ -23,8 +24,10 @@ export const networkConfig: { [chainId: string]: NetworkConfigItem } = {
   },
   80001: {
     name: 'polygonMumbai',
+    underlyingTokenAddress: '0x81F00542e82e456001196f8c3c747fC1A5dDca80',
     type: 'test-net',
     waitForConfirmations: 6,
+    expiryDate: 1672531200,
   },
   137: {
     name: 'polygon',

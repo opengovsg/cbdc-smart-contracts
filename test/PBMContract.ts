@@ -1,4 +1,4 @@
-import { PBMToken } from '../typechain-types'
+import { PBMTokenUpgradeable as PBMToken } from '../typechain-types'
 import { ethers } from 'hardhat'
 import { time } from '@nomicfoundation/hardhat-network-helpers'
 
@@ -124,7 +124,7 @@ describe('PBM', () => {
       await dsgdToken.connect(pbmDeployer).approve(pbmToken.address, dsgdAmount(40))
 
       // Init contract to be associated to owner (treat as connect(pbmDeployer))
-      const pbmTokenAsOwner: PBMToken = await ethers.getContract('PBMToken', pbmDeployer)
+      const pbmTokenAsOwner: PBMToken = await pbmToken.connect(pbmDeployer)
       const mintToSelf = pbmTokenAsOwner.wrapMint(pbmDeployer.address, pbmAmount(10))
 
       // Assertions

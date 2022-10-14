@@ -32,4 +32,4 @@ const deployFunction: DeployFunction = async ({ getNamedAccounts, deployments })
 }
 
 export default deployFunction
-deployFunction.tags = ['all', 'dsgd']
+deployFunction.tags = ['dsgd']

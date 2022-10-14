@@ -38,4 +38,5 @@ const deployFunction: DeployFunction = async ({ getNamedAccounts, deployments })
 }
 
 export default deployFunction
-deployFunction.tags = ['all', 'pbm']
+deployFunction.tags = ['pbm-standard']
+deployFunction.dependencies = ['dsgd']

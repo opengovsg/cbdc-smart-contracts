@@ -6,6 +6,8 @@ import '@typechain/hardhat'
 import '@nomiclabs/hardhat-ethers'
 import '@primitivefi/hardhat-dodoc'
 import 'hardhat-deploy'
+import '@openzeppelin/hardhat-upgrades'
+
 import { getPrivateKeyForRole } from './helpers/network'
 
 // RPC Envs

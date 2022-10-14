@@ -12,6 +12,7 @@
     "compile": "npx hardhat compile",
     "postinstall": "npm run compile",
     "deploy:pbm": "npx hardhat deploy --tags pbm",
+    "deploy:pbm-upgradeable": "npx hardhat deploy --tags pbm-upgradeable",
     "deploy:all": "npx hardhat deploy --tags all"
   },
   "author": "",
@@ -25,6 +26,8 @@
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.13",
     "@nomiclabs/hardhat-etherscan": "^3.1.0",
     "@openzeppelin/contracts": "^4.7.1",
+    "@openzeppelin/contracts-upgradeable": "^4.8.0-rc.1",
+    "@openzeppelin/hardhat-upgrades": "^1.21.0",
     "@primitivefi/hardhat-dodoc": "^0.2.3",
     "@typechain/ethers-v5": "^10.1.0",
     "@typechain/hardhat": "^6.1.2",
