@@ -12,11 +12,6 @@ export function getPrivateKeyForRole(role: Role): string {
   return privateKey
 }
 
-export function getDeployedUnderlyingToken(chainId: number): string {
-  const underlyingTokenAddress = networkConfig[chainId].underlyingTokenAddress
-  if (!underlyingTokenAddress) {
-    throw new Error(`Underlying token address not configured for chain ${chainId}`)
-  }
-
-  return underlyingTokenAddress
+export function getDeployedUnderlyingToken(chainId: number): string | undefined {
+  return networkConfig[chainId].underlyingTokenAddress
 }

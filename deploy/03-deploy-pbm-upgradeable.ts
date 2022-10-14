@@ -3,6 +3,7 @@ import { network, ethers, upgrades } from 'hardhat'
 import { getDeployedUnderlyingToken } from '../helpers/network'
 import { networkConfig } from '../helper-hardhat-config'
 import { verifyContract } from '../helpers/verify'
+import { getPastDeployment } from '../helpers/utils'
 
 // NOTE: This deployment uses a separate `hardhat-upgrades` package for deployment
 // This library is maintained by OZ, and deployments tracking is reflected in .openzepellin
@@ -18,7 +19,8 @@ const deployFunction: DeployFunction = async ({ deployments }) => {
   // Get Deployment configurations
   const { save, log } = deployments
   const pbmDeployer = await ethers.getNamedSigner('PBMDeployer')
-  const pastDeployment = await deployments.get('PBMTokenUpgradeable')
+  const pastDeployment = await getPastDeployment('PBMTokenUpgradeable', deployments)
+
   const chainId = network.config.chainId
 
   if (!chainId) {
@@ -26,8 +28,9 @@ const deployFunction: DeployFunction = async ({ deployments }) => {
   }
 
   // Retrieve underlying token deployment details (if any)
+  // Gets from past deployment if not specified
   const dsgdContractAddress =
-    (await deployments.get('DSGDToken')).address || getDeployedUnderlyingToken(chainId)
+    getDeployedUnderlyingToken(chainId) || (await deployments.get('DSGDToken')).address
 
   // Deploy with contract factory
   const PbmUpgradeableToken = await ethers.getContractFactory('PBMTokenUpgradeable', {
@@ -47,8 +50,8 @@ const deployFunction: DeployFunction = async ({ deployments }) => {
       PbmUpgradeableToken,
       [
         dsgdContractAddress,
-        'Orchid PBM - UAT',
-        'TPBM',
+        'OGP PBM Tokens',
+        'OPBM',
         networkConfig[chainId].expiryDate || tentativeExpiryDate,
       ],
       { kind: 'transparent' }

@@ -9,7 +9,7 @@ import { DSGDToken, PBMTokenUpgradeable as PBMToken } from '../../typechain-type
 
 // Fixture for init-ing contracts
 export const initBothContracts = deployments.createFixture(async ({ deployments, ethers }) => {
-  await deployments.fixture(['pbm-upgradeable', 'dsgd'])
+  await deployments.fixture(['dsgd', 'pbm-upgradeable'])
 
   // Sets up identities
   const pbmDeployer = await ethers.getNamedSigner('PBMDeployer')
