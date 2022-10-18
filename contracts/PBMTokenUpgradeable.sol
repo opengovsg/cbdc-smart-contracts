@@ -94,7 +94,6 @@ contract PBMTokenUpgradeable is ERC20PausableUpgradeable, AccessControlUpgradeab
         underlyingToken.safeTransfer(toUser, amount);
         _burn(_msgSender(), amount);
         emit Redemption(_msgSender(), toUser, amount);
-
     }
 
     /**

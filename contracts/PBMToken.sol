@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interfaces/IPBM.sol";
 
-
 /// @title PBM contract
 /// @author Open Government Products
 /// @notice Implementation of the IPBM interface
