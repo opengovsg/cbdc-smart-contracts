@@ -92,6 +92,7 @@ contract PBMToken is ERC20Pausable, AccessControl, IPBM {
     function redeem(address toUser, uint256 amount) external whenNotExpired onlyApprovedMerchant(toUser) {
         underlyingToken.safeTransfer(toUser, amount);
         _burn(_msgSender(), amount);
+        emit Redemption(_msgSender(), toUser, amount);
     }
 
     /**
