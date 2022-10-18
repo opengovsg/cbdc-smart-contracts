@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interfaces/IPBM.sol";
 
-
 /// @title PBM contract
 /// @author Open Government Products
 /// @notice Implementation of the IPBM interface
@@ -92,6 +91,7 @@ contract PBMToken is ERC20Pausable, AccessControl, IPBM {
     function redeem(address toUser, uint256 amount) external whenNotExpired onlyApprovedMerchant(toUser) {
         underlyingToken.safeTransfer(toUser, amount);
         _burn(_msgSender(), amount);
+        emit Redemption(_msgSender(), toUser, amount);
     }
 
     /**

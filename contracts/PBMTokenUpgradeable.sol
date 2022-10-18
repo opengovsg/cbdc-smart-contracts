@@ -93,6 +93,7 @@ contract PBMTokenUpgradeable is ERC20PausableUpgradeable, AccessControlUpgradeab
     function redeem(address toUser, uint256 amount) external whenNotExpired onlyApprovedMerchant(toUser) {
         underlyingToken.safeTransfer(toUser, amount);
         _burn(_msgSender(), amount);
+        emit Redemption(_msgSender(), toUser, amount);
     }
 
     /**
