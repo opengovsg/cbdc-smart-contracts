@@ -33,7 +33,8 @@ Through talking to more than 20 Government agency Campaign Organizer , the Redee
 7. Voucher expiry date is applied
 
 ## Goals
-![as is vs future](image_path)
+<img src="assets/as_is_flow.png" alt="as is flow" width="300" height="200"/>
+<img src="assets/new_flow.png" alt="new flow" width="400" height="200"/>
 
 As part of the CBDC retail trial, OGP aims to achieve the following goals:
 
@@ -71,7 +72,7 @@ Given the focus of the trial is simply to validate the feasibility of the PBM/DS
 For the context of this trial, we have partnered with the Development Bank of Singapore (DBS) as a bank partner for realising the DSGD segment and making the SGD payments back to the merchants. 
 
 ### High Level Overview
-(Insert overflow diagram)
+<img src="assets/copy_of_overall_flow.jpg" alt="copy_of_overall_flow" width="600" height="400"/>
 
 ### Core Decisions
 #### User Initiated Flow
@@ -151,6 +152,18 @@ As described in previous sections, token minting requires the issuer to shore up
 The voucher (PBM) recipient will sign up for the campaign with the PBM Issuer. The PBM Issuer will then create a Crypto Wallet for him and map this wallet to his NRIC. The voucher (PBM) recipient will then be sent a unique voucher link via SMS. This voucher link will contain his wallet information.
 
 (insert UML diagram)
+```mermaid
+sequenceDiagram
+    PBM Receiver->>PBM Issuer: Sign Up for Campaign
+    PBM Issuer-->>PBM Issuer: Creation of Crypto Wallet
+    PBM Issuer-->>PBM Receiver: Share a Unique link to the web application
+```
+<pre><code class="language-mermaid">graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+</code></pre>
 
 #### Payment
 The transaction experience will be similar to that of a typical online payment flow, as follows: 
@@ -184,4 +197,81 @@ DBS will handle the conversion of DSGD back to SGD. At the end of the day, DBS w
 Technical Design will be greater elaborated and source code can be accessed here - (insert link)
 
 ### Design Choices
+| Category | Design Choice | Rationale |
+|---|---|---|
+| Permissioned vs Permissionless Networks  | In the context of the trial, a permissionless network is used, which is readily available and publicly accessible  |  For the trial, we are relatively flexible towards the type of network used. The main rationale for utilising already available permissionless chain is to provide easier interoperability with other projects within this paper, that have also been geared towards public use <br> <br>Additionally, public networks are also much easier to develop for, given that no additional networking infrastructures or access control policies are required. This helps to reduce the barrier of entry for collaboration amongst other participants within this paper. |
+| Permissionless Network Choice | We will be utilising a Permissionless Polygon network for this trial. <br> <br> UAT testing was done on the Mumbai Testnet and production deployment was on Polygon Mainnet | There are a few solutions in the public and permissionless chain space. Ideally, the network choice should be compatible with the system’s usage patterns, where transactions are ideally fast and relatively low-value. This also equates to an acceptable level of gas prices to reflect these use cases. <br> <br> Polygon compliments this by offering a sidechain that is sufficiently reliable, cheap and  well supported by 3rd party services. <br> <br> The network of choice should also be ideally EVM compatible, where it is sufficiently easy to develop for. Solidity has become one of, if not, the most popular language of choice for smart contract development. |
+| Pegging | We adopted a collateralized approach to ensure the 1:1 pegging ratio holds for the SGD-DSGD peg and the DSGD-PBM token peg, we ensured that 1) the total DSDG in circulation = the total SGD in earmarked, 2) the total PBM token in circulation = the total DSGD held in the PBM contract address | For pegging between SGD to DSGD, we are earmarking the respective fiat to back the DSGD token. <br> For pegging between DSGD to PBM Token, we are putting the DSGD into the PBM contract address, which serves as an escrow account to back the PBM Token. <br> We felt that this was the safest way to ensure SGD-DSGD and DSGD- PBM token will not depeg. <br> <br> We also explored some non-collateralized approaches but felt that it was not as effective.| 
+| PBM Tokens Conditions | **Campaign expiry date** <br> Once the campaign expires, all the PBM token will be converted to DSGD and send back back to Campaign organizer’s wallet <br><br> **Merchant list** <br> Only approved merchant wallets will be allowed to receive DSGD from that PBM token (Ring Fencing redemptions)| Technically any business logic can be added to the PBM contract, we are just showcasing these 2 as these are the commonly required business logic in Government. |
+| Interoperability (DSGD) | Smart contracts were written in Solidity and using the popular ERC standards. We settled with the ERC20 standard since it is the most popular ERC standard, and the best representation of fungible tokens. | **DSGD can interoperate with both Government and Commercial Issued PBM Tokens** <br> When building the DSGD smart contract, we also ensured that it can be easily interoperable between both commercial and government use cases (eg; Xfers, Grab, OGP) <br><br> Ideally, this base DSGD contract should offer familiar interfaces for other stakeholders to integrate with. The ERC20 standards and extensions offer the required functionality to enable many of the design requirements that a wrapping PBM token can utilise <br><br> In the future, we hope to merge all of the various DSGD token implementations.|
+| Crypto Custody | PBM Recipient’s crypto wallet private keys will be stored and managed by OGP, private keys accessible by user <br><br> DSGD Recipient’s crypto wallet private keys will be stored and managed by DBS, private keys not accessible by user| Wallet and private key management still remains a UX problem in the web3 space, requiring either an additional app or an extension. For this trial, we are looking towards removing wallet management on the part of the voucher recipient <br><br> We wanted to abstract away the concept of interacting with the blockchain from the user’s point of view.  <br><br> We also do not want the users to manage their private keys.  <br><br>That said, we still have the ability to release the user’s private keys if he plans to use a 3rd party application |
+
+### Comparisons
+
+In general, we considered the 3 most popular token standards that have sufficient support with popular wallet providers. 
+
+1. ERC20 - A fungible token standard
+2. ERC721 - A non-fungible token standard
+3. ERC1155 - A multi-token standard
+
+ERC721 was eliminated due to lack of support for a fungible wallet approach, as discussed in core decisions
+
+|Token Standards|Main Concept|Pros|Cons|
+|---|---|---|---|
+|ERC-20|1 smart contract per campaign  <br> Accounts based, with no fixed denominations|Easier to manage and make modification - more granular approach and custom functionalities can be done more easily should it be requested by an organiser <br><br>  Lower risk of contract bloating <br><br>  Easier for campaign specific mechanisms (eg; pausing per campaign) <br><br>  Clearer ownership model, with owner being the campaign organiser. RedeemSG only provides the factory and platform to easily create these contracts. Contracts are also modelled directly to existing concept of a campaign|Wasteful, most campaigns share the same interface either way, unnecessary deployments are being made per campaign if same interface <br> <br> Contracts are distributed across multiple addresses, need to implement an additional aggregator/address discovery service|
+|ERC-1155|1 smart contract for all campaigns, akin to a platform contract <br> <br> Allows support for both NFT-based ( ERC721) and wallet based (ERC20) approaches|Follow the paper vouchers concept with support for NFTs <br><br> Better for a decentralised approach. If we're allowing users to manage their own wallets, a new NFT transferred to them will immediately appear on their metamask wallet. Hence, lesser work needed to be done by the end user <br> <br> Better design for token/campaigns that share same logic requirements|More complexity, which equates to potentially more vulnerabilities and gas requirements. Contract is more lethargic to logical changes.  <br> <br> The contract infrastructures required to enable this might lead to more gas consumption in the long run (eg; looking up state for permissions, interacting with separate storage contracts etc.)|
+
+### Implementation
+The following describes the high level overview for the contract design. 
+
+(insert image)
+
+The current scope of contract logic is scoped primarily to current known requirements from redeemSG - where merchant list, expiry date  and necessary campaign metadata can be specified. Given the less rigid design, it is also possible to customise this logic in the foreseeable future. 
+
+A more thorough discussion will be done in the technical discussion. 
+
+## Conclusion
+### Achievement of trial goals 
+|Goal|How the goal is achieved|Areas to be worked through|
+|---|---|---|
+|Demonstrating faster payouts to merchants|Merchants receive DSGD directly once a voucher transaction takes place, as the PBM converts directly into DSGD as per the logic of the PBM smart contract. |While merchants receive DSGD immediately, for DSGD to be immediately useful, it would need to be accepted more widely. <br><br>This requires it either to be more widely in circulation, for there to be a healthy ecosystem around it, or for legislation to formally designate it as legal tender.|
+|Demonstrating feasibility of adopting smart contracts for Government campaigns|We have demonstrated that it is indeed feasible to use the mechanism of PBM smart contract to achieve the goals of Government campaign organizers’ requirements - such as ensuring PBM token/ voucher expiry and targeting specific merchants.  |While it is technically possible to provide PBM issuers with the ability to write and deploy their own smart contracts via a contract factory, it is unclear what the wider adoption would look like. <br><br>For instance, not all PBM issuers will have the technical capability to do so. To promote wider adoption, we may have to provide a portal through which PBM issuers specify their contract requirements, and to provide PBM “templates” that make it easier for the PBM issuer. |
+|Demonstrating interoperability for voucher schemes|As mentioned above, while building the DSGD smart contract, we did ensure it is easily interoperable between government and commercial use cases and that recipients still can access the same tokens via crypto Wallet apps.|For wider roll out across singapore, there should ideally be the same token standard across commercial and private use cases - e.g. whether it be ERC 20 or ERC 1155. The choice of what token standard would work best for Retail CBDC is something that would need to be worked through.|
+|Ease of conversion between DSGD and SGD|As mentioned above, this is achieved as the DSGD Issuer (in this case DBS) handles the conversion on the merchant’s behalf of DSGD back to SGD at the end of the day via a batch job. |Ideally, the DSGD Issuer could explore ways in which the conversion could be done on a more real time basis. |
+|Feasible migration to Web3 Infrastructures|Generally, the migration has been demonstrated to be relatively feasible, with added caveats. Operating costs as a voucher management platform provider (ie; RedeemSG) went down as a result of this migration. |We also found that the same guarantees for transaction reliability went down when adopting a public/permissionless networking approach. A great deal of monitoring is done to : <br> 1. Ensure transactions reach a consistent state <br> 2. Ensure users have sufficient gas in place of network congestions <br><br>There are also additional UX challenges that surfaced with the permissionless approach, with some harbouring on the topics of user privacy and convenience <br><br> Most of these are existing challenges that we would like to tackle in future stages of the trial. We have outlined some actionable improvements in the next section.|
+
+### Future Improvements
+Going forwards, we also hope to offer the following improvements
+
+**Reconsideration of network architectures**
+
+Re-evaluate the selection of a permission network, which mitigates many of the complications that come with a public and permissionless setup.
+
+**Providing better user experience (UX)**
+
+Handling gas fee management with Gas Station Network (GSN). Ideally the users should not need to manage gas consumption, given the need reducing complexities on the part of voucher recipients
+
+Providing adequate transaction relay mechanisms to reduce the need for resolving more complex edge cases during transaction delivery - eg; stuck transactions. These are concerns that should be addressed as we scale beyond the scope of this trial. 
+
+**Providing support for offline vouchers**
+
+The government use case has the added concern for inclusivity. Ideally, paper vouchers should still be supported in the future, considering the current state of digital savviness of the older sections of the population. Systems have to be designed to be inclusive, in order to be viable, since purpose based money often comes with the main concern of providing relief to specific segments of the population.
+
+**Adoption of ERC1155**
+
+An ERC1155 contract would serve as the sole platform contract that stores all the PBM tokens across multiple PBM Issuers. In future iterations, we hope to solidify the campaign organiser requirements and further refine the required contract interfaces for government agencies. This brings about the potential for a platform contract to manage all government voucher/PBM campaigns that can further streamline PBM token creations for different government agencies.
+Offering options for token fungibility. ERC1155 is able to support both NFT and FT standards that may be useful for certain campaigns that may require support for paper vouchers or fixed denomination spending. 
+
+### Future Work
+**Integration with government wallet providers**
+
+Exploration integration and implementation of government wallet providers that are closely associated with the national digital identity movement, opening up potential for easily crediting PBMs based on user identity and recipient requirements -  such as means testing.
+
+**Integration with PAYNOW**
+
+With PAYNOW integration, we would have a mapping between the NRIC/UEN with a crypto wallet address. By doing so, when a user scans the SGQR, he would be able to select whether he wants to transaction SGD via FAST (current payment rails), or DSGD via this new payment rail. With that, the team would not need to handle merchant onboarding. As long as a merchant is onboarded to PAYNOW, and has a crypto wallet address, the PBM Recipients would be able to make payments in their shop.
+
+**Integration with commercial wallet providers**
+
+We have plans to work with the commercial wallet providers such GrabPay, DBS PayLah!, etc to allow the PBM recipients to access and use their PBM Tokens from a commercial wallet provider of their choice.
 
