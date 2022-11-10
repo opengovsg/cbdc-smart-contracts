@@ -72,7 +72,7 @@ Given the focus of the trial is simply to validate the feasibility of the PBM/DS
 For the context of this trial, we have partnered with the Development Bank of Singapore (DBS) as a bank partner for realising the DSGD segment and making the SGD payments back to the merchants. 
 
 ### High Level Overview
-<img src="assets/copy_of_overall_flow.jpg" alt="copy_of_overall_flow" width="600" height="400"/>
+<img src="assets/copy_of_overall_flow.jpg" alt="copy_of_overall_flow" width="800" height="400"/>
 
 ### Core Decisions
 #### User Initiated Flow
@@ -145,56 +145,120 @@ The outcome of this is similar to what we are currently doing for the CDC campai
 ### PBM Issuer Experience
 As described in previous sections, token minting requires the issuer to shore up for an equivalent amount of DSGD. Essentially, issuers will need to already have the required DSGD tokens that they wish to wrap a purpose to. The following illustrates the token flow.
 
-(Insert UML diagram)
+```mermaid
+sequenceDiagram 
+	participant PBM Issuer
+	participant PBM Contract
+	participant PBM Recipient
+
+  PBM Issuer ->> PBM Contract: Spawn and init contract, via factory
+	note over PBM Issuer: at this point, PBM issuer <br> has $10 DSGD tokens
+	PBM Issuer ->> PBM Contract: Request Mint to PBM Recipient, $1 PBM
+activate PBM Contract
+	PBM Contract ->> PBM Issuer: Deduct $1 DSGD, credit DSGD to self
+	PBM Contract ->> PBM Recipient: Mint and Credit $1 PBM to PBM Recipient
+deactivate PBM Contract
+
+	note over PBM Contract: contract <br> has $1 DSGD tokens
+	note over PBM Issuer: issuer <br> has $9 DSGD tokens
+	note over PBM Recipient: issuer <br> has $1 PBM tokens
+```
 
 ### PBM Receiver Experience
 #### Onboarding
 The voucher (PBM) recipient will sign up for the campaign with the PBM Issuer. The PBM Issuer will then create a Crypto Wallet for him and map this wallet to his NRIC. The voucher (PBM) recipient will then be sent a unique voucher link via SMS. This voucher link will contain his wallet information.
 
-(insert UML diagram)
 ```mermaid
 sequenceDiagram
     PBM Receiver->>PBM Issuer: Sign Up for Campaign
     PBM Issuer-->>PBM Issuer: Creation of Crypto Wallet
     PBM Issuer-->>PBM Receiver: Share a Unique link to the web application
 ```
-<pre><code class="language-mermaid">graph TD;
-    A-->B;
-    A-->C;
-    B-->D;
-    C-->D;
-</code></pre>
 
 #### Payment
 The transaction experience will be similar to that of a typical online payment flow, as follows: 
 
 He would open a web app, select the PBM token amount and select the shop he wants to make payment too. There are 2 methods of selecting the recipient: 1) Select the shop name from a drop down list, 2) Scan the merchant QR code. Once done, the user will be brought to the payment confirmation screen and he will ensure the amount and recipient is accurate before pressing “confirm”. Once done, the PBM tokens will be transferred to the PBM contract and the PBM contract will release the corresponding DSGD to the merchant’s wallet. He will then receive a confirmation message showing the Amount, Shop Name, Date and Time. This confirmation message will be shown to the PBM Recipient and used as proof of payment. PBM Recipient can also check his transaction history for proof of payment.
 
-(insert UML diagram)
+**Payment Flow**
+```mermaid
+flowchart LR
+    id1(Select Amount) --> id2(Select merchant to pay) --> id3(Payment confirmation page) --> id4(Payment Success page)
+```
+
+**Merchant View**
+```mermaid
+flowchart LR
+    id1(Merchants key in their wallet address) --> id2(Merchant check transaction history)
+```
 
 **Select Amount and Shop**
-(insert Screenshot)
+
+<img src="assets/user_landing_page.png" alt="user_landing_page" width="150" height="300"/>
+<img src="assets/user_merchant_list.png" alt="user_merchant_list" width="150" height="300"/>
 
 **Confirm Payment and Receive Success Message**
-(insert Screenshot)
+
+<img src="assets/user_payment_confirmation.png" alt="user_payment_confirmation" width="150" height="300"/>
+<img src="assets/user_payment_receipt.png" alt="user_payment_receipt" width="150" height="300"/>
 
 The interaction between the PBM recipient, the merchant contract and the token contract are as follows:
 
-(insert UML diagram)
+```mermaid
+sequenceDiagram 
+	participant PBM Recipient
+  participant Merchant Contract
+  participant Token Contract
+
+
+  PBM Recipient->>Token Contract: Request for token information / balances
+	PBM Recipient ->> Merchant Contract: Request for valid merchants for token
+	Token Contract -->> PBM Recipient: returns token information
+	Merchant Contract -->> PBM Recipient: returns merchant listing
+
+
+	PBM Recipient ->> PBM Recipient: select merchant, create transaction
+
+
+	activate PBM Recipient
+	PBM Recipient ->> PBM Recipient: sign transaction
+	PBM Recipient ->> Token Contract: commit transaction, wait for confirmations
+	deactivate PBM Recipient
+```
 
 #### PBM Recipient Experience
 **Onboarding**
 Merchant would sign up with OGP. OGP will send the merchant’s bank account number to DBS for the creation of their Crypto Wallet. After creation, the Wallet address will be returned to OGP and these addresses will be added to the “approved” merchant list within the PBM contract. OGP will send a unique link to the merchant via SMS. Once done, when a user makes a payment, the PBM contract will validate whether the merchant address is in the “approved” list and approve or reject the transaction.
 
-(insert UML diagram)
+```mermaid
+sequenceDiagram 
+	participant Merchant
+  participant OGP
+  participant DBS
+
+  Merchant->>OGP: Merchant Sign Up
+  OGP->>DBS: Send Merchant Bank Account Number
+	DBS->>DBS: Create Crypto Wallet
+	DBS->>OGP: Send Merchant Crypto Wallet Address
+	OGP->>OGP: Add Merchant Wallet Address to the PBM Contract
+  OGP->>Merchant: Send a unique link to access the merchant app
+```
 
 #### Payouts
 DBS will handle the conversion of DSGD back to SGD. At the end of the day, DBS will run a job and transfer all the DSGD from the merchant’s crypto wallet back to their crypto wallet. Afterwhich, they will proceed to burn the DSGD and release the SGD earmarked and transfer it to the Merchant’s Bank Account.
 
-(insert UML diagram)
+```mermaid
+sequenceDiagram 
+	participant DBS
+  participant Merchant
+
+  DBS->>Merchant: Trigger Daily Job
+  Merchant->>DBS: Transfer DSGD to DBS Crypto Wallet
+	DBS->>DBS: Burn DSGD, release earmarked SGD
+	DBS->>Merchant: Release SGD to Merchant Bank Account
+```
 
 ## Technical Design
-Technical Design will be greater elaborated and source code can be accessed here - (insert link)
 
 ### Design Choices
 | Category | Design Choice | Rationale |
@@ -224,7 +288,8 @@ ERC721 was eliminated due to lack of support for a fungible wallet approach, as 
 ### Implementation
 The following describes the high level overview for the contract design. 
 
-(insert image)
+<img src="assets/contract_factory_design.jpg" alt="contract_factory_design" width="800" height="400"/>
+
 
 The current scope of contract logic is scoped primarily to current known requirements from redeemSG - where merchant list, expiry date  and necessary campaign metadata can be specified. Given the less rigid design, it is also possible to customise this logic in the foreseeable future. 
 
