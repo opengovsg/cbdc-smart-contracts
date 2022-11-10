@@ -194,13 +194,11 @@ flowchart LR
 
 **Select Amount and Shop**
 
-<img src="assets/user_landing_page.png" alt="user_landing_page" width="150" height="300"/>
-<img src="assets/user_merchant_list.png" alt="user_merchant_list" width="150" height="300"/>
+<img src="assets/user_landing_page.png" alt="user_landing_page" width="150" height="300"/> <img src="assets/user_merchant_list.png" alt="user_merchant_list" width="150" height="300"/>
 
 **Confirm Payment and Receive Success Message**
 
-<img src="assets/user_payment_confirmation.png" alt="user_payment_confirmation" width="150" height="300"/>
-<img src="assets/user_payment_receipt.png" alt="user_payment_receipt" width="150" height="300"/>
+<img src="assets/user_payment_confirmation.png" alt="user_payment_confirmation" width="150" height="300"/> <img src="assets/user_payment_receipt.png" alt="user_payment_receipt" width="150" height="300"/>
 
 The interaction between the PBM recipient, the merchant contract and the token contract are as follows:
 
