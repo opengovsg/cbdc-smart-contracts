@@ -5,6 +5,8 @@ import { time } from '@nomicfoundation/hardhat-network-helpers'
 import { expect } from 'chai'
 import { dsgdAmount, pbmAmount } from './helpers'
 import { initBothContracts, seedWalletStates } from './fixtures/pbm'
+import { getUnixTimestamp } from '../helpers/utils'
+import { EPOCH_TIME_IN_FUTURE } from './contants'
 
 /*
 TODO:
@@ -270,10 +272,6 @@ describe('PBM', () => {
   })
 
   describe('contract expiry', () => {
-    // TODO: Park this constants somewhere with fixtures
-    // TODO: Use moment for generating more human-readable timestamps
-    const EPOCH_TIME_IN_FUTURE = 1704067200
-
     it('should be able to extend an expiry for active contract', async () => {
       const { pbmToken, pbmDeployer } = await seedWalletStates()
       // Attempts to extend contract expiry to 2024
