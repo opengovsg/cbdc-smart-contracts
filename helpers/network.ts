@@ -1,4 +1,4 @@
-import { networkConfig } from '../helper-hardhat-config'
+import { deploymentConfig } from '../helper-hardhat-config'
 
 type Role = 'DSGD_DEPLOYER' | 'PBM_DEPLOYER'
 
@@ -13,5 +13,5 @@ export function getPrivateKeyForRole(role: Role): string {
 }
 
 export function getDeployedUnderlyingToken(chainId: number): string | undefined {
-  return networkConfig[chainId].underlyingTokenAddress
+  return deploymentConfig[chainId].underlyingTokenAddress
 }
