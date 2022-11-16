@@ -75,7 +75,7 @@ const config: HardhatUserConfig = {
   },
   dodoc: {
     runOnCompile: false,
-    include: ['PBMToken'],
+    include: ['IPBM.sol', 'PBMToken.sol'],
   },
 }
 

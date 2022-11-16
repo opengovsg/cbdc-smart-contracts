@@ -13,7 +13,8 @@
     "postinstall": "npm run compile",
     "deploy:pbm": "npx hardhat deploy --tags pbm",
     "deploy:pbm-upgradeable": "npx hardhat deploy --tags pbm-upgradeable",
-    "deploy:all": "npx hardhat deploy --tags all"
+    "deploy:all": "npx hardhat deploy --tags all",
+    "gen:docs": "npx hardhat dodoc"
   },
   "author": "",
   "license": "ISC",
