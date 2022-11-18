@@ -1,10 +1,12 @@
 # PBMToken
 
-> PBM Contract for Campaign Organisers
+*Open Government Products*
 
-Contract to govern PBM related operations for a campaign organiser
+> PBM contract
 
-_Most functions utilises OpenZepellin, with constrained modifiers in place to tighten up access control_
+Implementation of the IPBM interface
+
+
 
 ## Methods
 
@@ -14,58 +16,50 @@ _Most functions utilises OpenZepellin, with constrained modifiers in place to ti
 function DEFAULT_ADMIN_ROLE() external view returns (bytes32)
 ```
 
+
+
+
+
+
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | bytes32 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes32 | undefined |
 
-### DISSOLVER_ADMIN_ROLE
+### MERCHANT_ADMIN_ROLE
 
 ```solidity
-function DISSOLVER_ADMIN_ROLE() external view returns (bytes32)
+function MERCHANT_ADMIN_ROLE() external view returns (bytes32)
 ```
+
+
+
+
+
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | bytes32 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes32 | undefined |
 
-### DISSOLVER_ROLE
+### MERCHANT_ROLE
 
 ```solidity
-function DISSOLVER_ROLE() external view returns (bytes32)
+function MERCHANT_ROLE() external view returns (bytes32)
 ```
+
+
+
+
+
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | bytes32 | undefined   |
-
-### addSupply
-
-```solidity
-function addSupply(address recipient, uint256 amount) external nonpayable returns (bool)
-```
-
-Similar to a deposit function of a wrapped token. Caller has to approve contract&#39;s address on underlying token. Limited to owner
-
-_Current logic for decimal conversion is not finalised_
-
-#### Parameters
-
-| Name      | Type    | Description                                                   |
-| --------- | ------- | ------------------------------------------------------------- |
-| recipient | address | address of recipient to mint to                               |
-| amount    | uint256 | pbm token s to be minted, expressed in this contracts decimal |
-
-#### Returns
-
-| Name | Type | Description                   |
-| ---- | ---- | ----------------------------- |
-| \_0  | bool | returns success state of mint |
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes32 | undefined |
 
 ### allowance
 
@@ -73,20 +67,22 @@ _Current logic for decimal conversion is not finalised_
 function allowance(address owner, address spender) external view returns (uint256)
 ```
 
-_See {IERC20-allowance}._
+
+
+*See {IERC20-allowance}.*
 
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| owner   | address | undefined   |
-| spender | address | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| owner | address | undefined |
+| spender | address | undefined |
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | uint256 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
 
 ### approve
 
@@ -94,20 +90,22 @@ _See {IERC20-allowance}._
 function approve(address spender, uint256 amount) external nonpayable returns (bool)
 ```
 
-_See {IERC20-approve}. NOTE: If `amount` is the maximum `uint256`, the allowance is not updated on `transferFrom`. This is semantically equivalent to an infinite approval. Requirements: - `spender` cannot be the zero address._
+
+
+*See {IERC20-approve}. NOTE: If `amount` is the maximum `uint256`, the allowance is not updated on `transferFrom`. This is semantically equivalent to an infinite approval. Requirements: - `spender` cannot be the zero address.*
 
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| spender | address | undefined   |
-| amount  | uint256 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| spender | address | undefined |
+| amount | uint256 | undefined |
 
 #### Returns
 
 | Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+|---|---|---|
+| _0 | bool | undefined |
 
 ### balanceOf
 
@@ -115,33 +113,55 @@ _See {IERC20-approve}. NOTE: If `amount` is the maximum `uint256`, the allowance
 function balanceOf(address account) external view returns (uint256)
 ```
 
-_See {IERC20-balanceOf}._
+
+
+*See {IERC20-balanceOf}.*
 
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| account | address | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| account | address | undefined |
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | uint256 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
+### contractExpiry
+
+```solidity
+function contractExpiry() external view returns (uint256)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
 
 ### decimals
 
 ```solidity
-function decimals() external pure returns (uint8)
+function decimals() external view returns (uint8)
 ```
 
-_Returns the number of decimals used to get its user representation. For example, if `decimals` equals `2`, a balance of `505` tokens should be displayed to a user as `5.05` (`505 / 10 ** 2`). Tokens usually opt for a value of 18, imitating the relationship between Ether and Wei. This is the value {ERC20} uses, unless this function is overridden; NOTE: This information is only used for *display* purposes: it in no way affects any of the arithmetic of the contract, including {IERC20-balanceOf} and {IERC20-transfer}._
+
+
+*Returns the number of decimals used to get its user representation. For example, if `decimals` equals `2`, a balance of `505` tokens should be displayed to a user as `5.05` (`505 / 10 ** 2`). Tokens usually opt for a value of 18, imitating the relationship between Ether and Wei. This is the value {ERC20} uses, unless this function is overridden; NOTE: This information is only used for _display_ purposes: it in no way affects any of the arithmetic of the contract, including {IERC20-balanceOf} and {IERC20-transfer}.*
+
 
 #### Returns
 
-| Name | Type  | Description |
-| ---- | ----- | ----------- |
-| \_0  | uint8 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint8 | undefined |
 
 ### decreaseAllowance
 
@@ -149,37 +169,38 @@ _Returns the number of decimals used to get its user representation. For example
 function decreaseAllowance(address spender, uint256 subtractedValue) external nonpayable returns (bool)
 ```
 
-_Atomically decreases the allowance granted to `spender` by the caller. This is an alternative to {approve} that can be used as a mitigation for problems described in {IERC20-approve}. Emits an {Approval} event indicating the updated allowance. Requirements: - `spender` cannot be the zero address. - `spender` must have allowance for the caller of at least `subtractedValue`._
+
+
+*Atomically decreases the allowance granted to `spender` by the caller. This is an alternative to {approve} that can be used as a mitigation for problems described in {IERC20-approve}. Emits an {Approval} event indicating the updated allowance. Requirements: - `spender` cannot be the zero address. - `spender` must have allowance for the caller of at least `subtractedValue`.*
 
 #### Parameters
 
-| Name            | Type    | Description |
-| --------------- | ------- | ----------- |
-| spender         | address | undefined   |
-| subtractedValue | uint256 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| spender | address | undefined |
+| subtractedValue | uint256 | undefined |
 
 #### Returns
 
 | Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+|---|---|---|
+| _0 | bool | undefined |
 
-### dissolveIntoDsgd
+### extendExpiry
 
 ```solidity
-function dissolveIntoDsgd(address recipient, uint256 amount) external nonpayable
+function extendExpiry(uint256 expiryDate) external nonpayable
 ```
 
-Dissolves PBM tokens into actual underlying token. Used for resident -&gt; merchant transactions
 
-_Utilises contract call to underlying token for transfer, proceeds to then burn PBM tokens dissolved (with accordance to ratio)._
+
+*Emits a { CampaignExtended } on success*
 
 #### Parameters
 
-| Name      | Type    | Description                                                                   |
-| --------- | ------- | ----------------------------------------------------------------------------- |
-| recipient | address | address of the recipient to transfer to. In this context, refers to merchant. |
-| amount    | uint256 | amount, in PBM decimals, to be transferred                                    |
+| Name | Type | Description |
+|---|---|---|
+| expiryDate | uint256 | The new expiry date (in UNIX epoch time format) |
 
 ### getRoleAdmin
 
@@ -187,19 +208,37 @@ _Utilises contract call to underlying token for transfer, proceeds to then burn 
 function getRoleAdmin(bytes32 role) external view returns (bytes32)
 ```
 
-_Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role&#39;s admin, use {\_setRoleAdmin}._
+
+
+*Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role&#39;s admin, use {_setRoleAdmin}.*
 
 #### Parameters
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| role | bytes32 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| role | bytes32 | undefined |
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | bytes32 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes32 | undefined |
+
+### grantMerchantRole
+
+```solidity
+function grantMerchantRole(address account) external nonpayable
+```
+
+Allows for the granting of merchant roles into an approved merchant list
+
+*Implemented as a wrapper of {AccessControl}*
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| account | address | The address of a merchant to be added into the approved merchant list |
 
 ### grantRole
 
@@ -207,14 +246,16 @@ _Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. 
 function grantRole(bytes32 role, address account) external nonpayable
 ```
 
-_Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have `role`&#39;s admin role. May emit a {RoleGranted} event._
+
+
+*Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have ``role``&#39;s admin role. May emit a {RoleGranted} event.*
 
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| role    | bytes32 | undefined   |
-| account | address | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| role | bytes32 | undefined |
+| account | address | undefined |
 
 ### hasRole
 
@@ -222,20 +263,22 @@ _Grants `role` to `account`. If `account` had not been already granted `role`, e
 function hasRole(bytes32 role, address account) external view returns (bool)
 ```
 
-_Returns `true` if `account` has been granted `role`._
+
+
+*Returns `true` if `account` has been granted `role`.*
 
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| role    | bytes32 | undefined   |
-| account | address | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| role | bytes32 | undefined |
+| account | address | undefined |
 
 #### Returns
 
 | Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+|---|---|---|
+| _0 | bool | undefined |
 
 ### increaseAllowance
 
@@ -243,20 +286,22 @@ _Returns `true` if `account` has been granted `role`._
 function increaseAllowance(address spender, uint256 addedValue) external nonpayable returns (bool)
 ```
 
-_Atomically increases the allowance granted to `spender` by the caller. This is an alternative to {approve} that can be used as a mitigation for problems described in {IERC20-approve}. Emits an {Approval} event indicating the updated allowance. Requirements: - `spender` cannot be the zero address._
+
+
+*Atomically increases the allowance granted to `spender` by the caller. This is an alternative to {approve} that can be used as a mitigation for problems described in {IERC20-approve}. Emits an {Approval} event indicating the updated allowance. Requirements: - `spender` cannot be the zero address.*
 
 #### Parameters
 
-| Name       | Type    | Description |
-| ---------- | ------- | ----------- |
-| spender    | address | undefined   |
-| addedValue | uint256 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| spender | address | undefined |
+| addedValue | uint256 | undefined |
 
 #### Returns
 
 | Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+|---|---|---|
+| _0 | bool | undefined |
 
 ### name
 
@@ -264,13 +309,16 @@ _Atomically increases the allowance granted to `spender` by the caller. This is 
 function name() external view returns (string)
 ```
 
-_Returns the name of the token._
+
+
+*Returns the name of the token.*
+
 
 #### Returns
 
-| Name | Type   | Description |
-| ---- | ------ | ----------- |
-| \_0  | string | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| _0 | string | undefined |
 
 ### owner
 
@@ -278,11 +326,16 @@ _Returns the name of the token._
 function owner() external view returns (address)
 ```
 
+
+
+
+
+
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | address | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | undefined |
 
 ### pause
 
@@ -290,9 +343,10 @@ function owner() external view returns (address)
 function pause() external nonpayable
 ```
 
-Pauses all transfer activity (specified in ERC20Pausable). Limited to owner
 
-_extension overrides \_beforeTokenTransfer&#39;s implementation._
+
+*Allows for pausing of contract activities Caller has to be owner*
+
 
 ### paused
 
@@ -300,44 +354,88 @@ _extension overrides \_beforeTokenTransfer&#39;s implementation._
 function paused() external view returns (bool)
 ```
 
-_Returns true if the contract is paused, and false otherwise._
+
+
+*Returns true if the contract is paused, and false otherwise.*
+
 
 #### Returns
 
 | Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+|---|---|---|
+| _0 | bool | undefined |
 
-### ratio
+### recover
 
 ```solidity
-function ratio() external view returns (uint8)
+function recover(address account) external nonpayable returns (uint256)
 ```
 
-Returns the static pegging of PBM token to underlying token, with decimal difference accounted for
 
-_Calculated as ratio underlying _ underlying.decimals() / pbm _ pbm.decimals()_
+
+*Additional control measure to maintain total supply parity should underlying tokens be credited to contract*
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| account | address | undefined |
 
 #### Returns
 
-| Name | Type  | Description                                          |
-| ---- | ----- | ---------------------------------------------------- |
-| \_0  | uint8 | static pegging with decimal difference accounted for |
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
+### redeem
+
+```solidity
+function redeem(address toUser, uint256 amount) external nonpayable
+```
+
+
+
+*Allows PBM recipients to unwrap and credit underlying token to a merchant Requirements: - the caller must have already owned PBM tokens - the contract is not paused - the contract is not expired Emits a { Redemption } on success*
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| toUser | address | undefined |
+| amount | uint256 | undefined |
 
 ### renounceRole
 
 ```solidity
-function renounceRole(bytes32 role, address account) external nonpayable
+function renounceRole(bytes32 _role, address _account) external nonpayable
 ```
 
-_Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function&#39;s purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been revoked `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `account`. May emit a {RoleRevoked} event._
+
+
+*Overriden functionality to prevent self-renouncing of roles from {AccessControl} This is a temporary measure for the context of this trial.*
 
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| role    | bytes32 | undefined   |
-| account | address | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| _role | bytes32 | undefined |
+| _account | address | undefined |
+
+### revokeMerchantRole
+
+```solidity
+function revokeMerchantRole(address account) external nonpayable
+```
+
+Allows for the revoking of already exisiting accounts in the merchant list
+
+*Implemented as a wrapper of {AccessControl}*
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| account | address | The address of a merchant to be revoked from the approved merchant list |
 
 ### revokeRole
 
@@ -345,14 +443,16 @@ _Revokes `role` from the calling account. Roles are often managed via {grantRole
 function revokeRole(bytes32 role, address account) external nonpayable
 ```
 
-_Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have `role`&#39;s admin role. May emit a {RoleRevoked} event._
+
+
+*Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have ``role``&#39;s admin role. May emit a {RoleRevoked} event.*
 
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| role    | bytes32 | undefined   |
-| account | address | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| role | bytes32 | undefined |
+| account | address | undefined |
 
 ### supportsInterface
 
@@ -360,19 +460,21 @@ _Revokes `role` from `account`. If `account` had been granted `role`, emits a {R
 function supportsInterface(bytes4 interfaceId) external view returns (bool)
 ```
 
-_See {IERC165-supportsInterface}._
+
+
+*See {IERC165-supportsInterface}.*
 
 #### Parameters
 
-| Name        | Type   | Description |
-| ----------- | ------ | ----------- |
-| interfaceId | bytes4 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| interfaceId | bytes4 | undefined |
 
 #### Returns
 
 | Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+|---|---|---|
+| _0 | bool | undefined |
 
 ### symbol
 
@@ -380,13 +482,16 @@ _See {IERC165-supportsInterface}._
 function symbol() external view returns (string)
 ```
 
-_Returns the symbol of the token, usually a shorter version of the name._
+
+
+*Returns the symbol of the token, usually a shorter version of the name.*
+
 
 #### Returns
 
-| Name | Type   | Description |
-| ---- | ------ | ----------- |
-| \_0  | string | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| _0 | string | undefined |
 
 ### totalSupply
 
@@ -394,13 +499,16 @@ _Returns the symbol of the token, usually a shorter version of the name._
 function totalSupply() external view returns (uint256)
 ```
 
-_See {IERC20-totalSupply}._
+
+
+*See {IERC20-totalSupply}.*
+
 
 #### Returns
 
-| Name | Type    | Description |
-| ---- | ------- | ----------- |
-| \_0  | uint256 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
 
 ### transfer
 
@@ -408,20 +516,22 @@ _See {IERC20-totalSupply}._
 function transfer(address to, uint256 amount) external nonpayable returns (bool)
 ```
 
-_See {IERC20-transfer}. Requirements: - `to` cannot be the zero address. - the caller must have a balance of at least `amount`._
+
+
+*See {IERC20-transfer}. Requirements: - `to` cannot be the zero address. - the caller must have a balance of at least `amount`.*
 
 #### Parameters
 
-| Name   | Type    | Description |
-| ------ | ------- | ----------- |
-| to     | address | undefined   |
-| amount | uint256 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| to | address | undefined |
+| amount | uint256 | undefined |
 
 #### Returns
 
 | Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+|---|---|---|
+| _0 | bool | undefined |
 
 ### transferFrom
 
@@ -429,21 +539,40 @@ _See {IERC20-transfer}. Requirements: - `to` cannot be the zero address. - the c
 function transferFrom(address from, address to, uint256 amount) external nonpayable returns (bool)
 ```
 
-_See {IERC20-transferFrom}. Emits an {Approval} event indicating the updated allowance. This is not required by the EIP. See the note at the beginning of {ERC20}. NOTE: Does not update the allowance if the current allowance is the maximum `uint256`. Requirements: - `from` and `to` cannot be the zero address. - `from` must have a balance of at least `amount`. - the caller must have allowance for `from`&#39;s tokens of at least `amount`._
+
+
+*See {IERC20-transferFrom}. Emits an {Approval} event indicating the updated allowance. This is not required by the EIP. See the note at the beginning of {ERC20}. NOTE: Does not update the allowance if the current allowance is the maximum `uint256`. Requirements: - `from` and `to` cannot be the zero address. - `from` must have a balance of at least `amount`. - the caller must have allowance for ``from``&#39;s tokens of at least `amount`.*
 
 #### Parameters
 
-| Name   | Type    | Description |
-| ------ | ------- | ----------- |
-| from   | address | undefined   |
-| to     | address | undefined   |
-| amount | uint256 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| from | address | undefined |
+| to | address | undefined |
+| amount | uint256 | undefined |
 
 #### Returns
 
 | Name | Type | Description |
-| ---- | ---- | ----------- |
-| \_0  | bool | undefined   |
+|---|---|---|
+| _0 | bool | undefined |
+
+### underlyingToken
+
+```solidity
+function underlyingToken() external view returns (contract IERC20Metadata)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | contract IERC20Metadata | undefined |
 
 ### unpause
 
@@ -451,9 +580,46 @@ _See {IERC20-transferFrom}. Emits an {Approval} event indicating the updated all
 function unpause() external nonpayable
 ```
 
-Pauses all transfer activity (specified in ERC20Pausable). Limited to owner
 
-_extension overrides \_beforeTokenTransfer&#39;s implementation._
+
+*Allows for resumption of an already paused contract of contract by owner Caller has to be owner*
+
+
+### withdraw
+
+```solidity
+function withdraw() external nonpayable returns (bool)
+```
+
+
+
+*Allows PBM owner to withdraw a campaign once the stipulated conditions are met For this implementation, an owner should be allowed to withdraw all unused DSGD after a pre-determined expiry has been met Requirements: - the contract is already expired - the caller is owner*
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bool | undefined |
+
+### wrapMint
+
+```solidity
+function wrapMint(address toUser, uint256 amount) external nonpayable
+```
+
+
+
+*Allows owner/minter to mint tokens from underlying tokens PREREQUISITE: Owners/Minters should have already approved this contract address to spend the underlying tokens on behalf of the owner/minter. Requirements: - the caller must be `owner`. - the contract is not paused - the contract is not expired - there has to be sufficient underlying token held by the owners that have been approved for  Emits a { Transfer } on success, inherited from {ERC20}*
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| toUser | address | undefined |
+| amount | uint256 | undefined |
+
+
 
 ## Events
 
@@ -463,13 +629,84 @@ _extension overrides \_beforeTokenTransfer&#39;s implementation._
 event Approval(address indexed owner, address indexed spender, uint256 value)
 ```
 
+
+
+
+
 #### Parameters
 
-| Name              | Type    | Description |
-| ----------------- | ------- | ----------- |
-| owner `indexed`   | address | undefined   |
-| spender `indexed` | address | undefined   |
-| value             | uint256 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| owner `indexed` | address | undefined |
+| spender `indexed` | address | undefined |
+| value  | uint256 | undefined |
+
+### CampaignExtended
+
+```solidity
+event CampaignExtended(address admin)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| admin  | address | undefined |
+
+### MerchantAdded
+
+```solidity
+event MerchantAdded(address account, address admin)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| account  | address | undefined |
+| admin  | address | undefined |
+
+### MerchantRevoked
+
+```solidity
+event MerchantRevoked(address account, address admin)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| account  | address | undefined |
+| admin  | address | undefined |
+
+### OwnerWithdrawal
+
+```solidity
+event OwnerWithdrawal(address account, uint256 amount)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| account  | address | undefined |
+| amount  | uint256 | undefined |
 
 ### Paused
 
@@ -477,11 +714,33 @@ event Approval(address indexed owner, address indexed spender, uint256 value)
 event Paused(address account)
 ```
 
+
+
+
+
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| account | address | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| account  | address | undefined |
+
+### Redemption
+
+```solidity
+event Redemption(address indexed fromUser, address indexed toUser, uint256 amount)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| fromUser `indexed` | address | undefined |
+| toUser `indexed` | address | undefined |
+| amount  | uint256 | undefined |
 
 ### RoleAdminChanged
 
@@ -489,13 +748,17 @@ event Paused(address account)
 event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)
 ```
 
+
+
+
+
 #### Parameters
 
-| Name                        | Type    | Description |
-| --------------------------- | ------- | ----------- |
-| role `indexed`              | bytes32 | undefined   |
-| previousAdminRole `indexed` | bytes32 | undefined   |
-| newAdminRole `indexed`      | bytes32 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| role `indexed` | bytes32 | undefined |
+| previousAdminRole `indexed` | bytes32 | undefined |
+| newAdminRole `indexed` | bytes32 | undefined |
 
 ### RoleGranted
 
@@ -503,13 +766,17 @@ event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, 
 event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)
 ```
 
+
+
+
+
 #### Parameters
 
-| Name              | Type    | Description |
-| ----------------- | ------- | ----------- |
-| role `indexed`    | bytes32 | undefined   |
-| account `indexed` | address | undefined   |
-| sender `indexed`  | address | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| role `indexed` | bytes32 | undefined |
+| account `indexed` | address | undefined |
+| sender `indexed` | address | undefined |
 
 ### RoleRevoked
 
@@ -517,13 +784,17 @@ event RoleGranted(bytes32 indexed role, address indexed account, address indexed
 event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)
 ```
 
+
+
+
+
 #### Parameters
 
-| Name              | Type    | Description |
-| ----------------- | ------- | ----------- |
-| role `indexed`    | bytes32 | undefined   |
-| account `indexed` | address | undefined   |
-| sender `indexed`  | address | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| role `indexed` | bytes32 | undefined |
+| account `indexed` | address | undefined |
+| sender `indexed` | address | undefined |
 
 ### Transfer
 
@@ -531,13 +802,17 @@ event RoleRevoked(bytes32 indexed role, address indexed account, address indexed
 event Transfer(address indexed from, address indexed to, uint256 value)
 ```
 
+
+
+
+
 #### Parameters
 
-| Name           | Type    | Description |
-| -------------- | ------- | ----------- |
-| from `indexed` | address | undefined   |
-| to `indexed`   | address | undefined   |
-| value          | uint256 | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| from `indexed` | address | undefined |
+| to `indexed` | address | undefined |
+| value  | uint256 | undefined |
 
 ### Unpaused
 
@@ -545,8 +820,15 @@ event Transfer(address indexed from, address indexed to, uint256 value)
 event Unpaused(address account)
 ```
 
+
+
+
+
 #### Parameters
 
-| Name    | Type    | Description |
-| ------- | ------- | ----------- |
-| account | address | undefined   |
+| Name | Type | Description |
+|---|---|---|
+| account  | address | undefined |
+
+
+

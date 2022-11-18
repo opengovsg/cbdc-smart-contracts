@@ -1,7 +1,7 @@
 import { DeployFunction, DeploymentSubmission } from 'hardhat-deploy/dist/types'
 import { network, ethers, upgrades } from 'hardhat'
 import { getDeployedUnderlyingToken } from '../helpers/network'
-import { networkConfig } from '../helper-hardhat-config'
+import { deploymentConfig } from '../helper-hardhat-config'
 import { verifyContract } from '../helpers/verify'
 import { getPastDeployment } from '../helpers/utils'
 
@@ -10,10 +10,6 @@ import { getPastDeployment } from '../helpers/utils'
 // hardhat-deploy is only used for it's save/get deployment artifact feature
 // hardhat-deploy's upgradeable deployment features lack some OZ features
 // Tracking issue https://github.com/wighawag/hardhat-deploy/issues/355
-
-// TODO: Finalise config params, move over to config helper file.
-
-const tentativeExpiryDate = 1672531200
 
 const deployFunction: DeployFunction = async ({ deployments }) => {
   // Get Deployment configurations
@@ -48,12 +44,7 @@ const deployFunction: DeployFunction = async ({ deployments }) => {
     // See https://docs.openzeppelin.com/upgrades-plugins/1.x/#how-plugins-work for usage
     proxy = await upgrades.deployProxy(
       PbmUpgradeableToken,
-      [
-        dsgdContractAddress,
-        'OGP PBM Tokens',
-        'OPBM',
-        networkConfig[chainId].expiryDate || tentativeExpiryDate,
-      ],
+      [dsgdContractAddress, 'OGP PBM Tokens', 'OPBM', deploymentConfig[chainId].expiryDate],
       { kind: 'transparent' }
     )
   }
@@ -75,7 +66,7 @@ const deployFunction: DeployFunction = async ({ deployments }) => {
   await save('PBMTokenUpgradeable', proxyDeployments)
 
   // Verification not needed for chains without access to etherscan (eg; local-nets)
-  if (networkConfig[chainId].type !== 'local-net') {
+  if (deploymentConfig[chainId].type !== 'local-net') {
     await verifyContract({
       address: proxy.address,
     })

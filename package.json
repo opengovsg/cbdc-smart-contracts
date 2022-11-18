@@ -1,5 +1,5 @@
 {
-  "name": "web3",
+  "name": "redeemx-contracts",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -13,7 +13,8 @@
     "postinstall": "npm run compile",
     "deploy:pbm": "npx hardhat deploy --tags pbm",
     "deploy:pbm-upgradeable": "npx hardhat deploy --tags pbm-upgradeable",
-    "deploy:all": "npx hardhat deploy --tags all"
+    "deploy:all": "npx hardhat deploy --tags all",
+    "gen:docs": "npx hardhat dodoc"
   },
   "author": "",
   "license": "ISC",
@@ -50,5 +51,8 @@
     "ts-node": "^10.9.1",
     "typechain": "^8.1.0",
     "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "moment": "^2.29.4"
   }
 }
