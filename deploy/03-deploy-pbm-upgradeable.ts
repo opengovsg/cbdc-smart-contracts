@@ -44,7 +44,12 @@ const deployFunction: DeployFunction = async ({ deployments }) => {
     // See https://docs.openzeppelin.com/upgrades-plugins/1.x/#how-plugins-work for usage
     proxy = await upgrades.deployProxy(
       PbmUpgradeableToken,
-      [dsgdContractAddress, 'OGP PBM Tokens', 'OPBM', deploymentConfig[chainId].expiryDate],
+      [
+        dsgdContractAddress,
+        'PBM Sample Token (Upgradeable)',
+        'XPBM',
+        deploymentConfig[chainId].expiryDate,
+      ],
       { kind: 'transparent' }
     )
   }
