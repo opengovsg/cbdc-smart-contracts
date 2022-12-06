@@ -1,8 +1,10 @@
 <h1 align="center">
   <br>
-  RedeemX Smart Contracts 
+  <a href="https://github.com/opengovsg/cbdc-smart-contracts/wiki" width="2000"><img src="https://user-images.githubusercontent.com/28633094/205862423-648d3290-a9fe-46aa-9730-f88857bad81b.png" alt="OGP PBM Token"  width="200"></a>
   <br>
-(Project Orchid)
+  RedeemX Smart Contracts
+  <br>
+  Project Orchid: Government Vouchers
 </h1>
 
 ## About
